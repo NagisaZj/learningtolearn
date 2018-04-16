@@ -231,7 +231,7 @@ def test():
     s = env.reset()
     ep_r = 0
     while True:
-        env.render()
+        #env.render()
         a = ac.choose_action(s)
         s, r, done, info = env.step(a)
         if r == -100 : r = -2
