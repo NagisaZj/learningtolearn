@@ -4,15 +4,14 @@ import tensorlayer as tl
 from optimizer import grader
 import matplotlib.pyplot as plt
 
-n_dimension = 2
-net_size = 2
-hidden_size=2
+n_dimension = 20
+net_size = 10
+hidden_size=5
 layers = 2
 batch_size = 1
 lr = 1e-3
 full_batch = 100
 train_steps = 10000
-functions = 100
 sess = tf.Session()
 
 
@@ -116,8 +115,8 @@ class train:
                 losses.append(loss)
         l = np.array(losses, dtype=np.float32)
         l.tofile("rnn.bin")
-        plt.plot(losses)
-        plt.savefig("rnn2.jpg")
+        #plt.plot(losses)
+        #plt.savefig("rnn2.jpg")
 
     def train_contrast(self):
         W = np.random.rand(full_batch, n_dimension)
@@ -132,10 +131,9 @@ class train:
 
         l = np.array(losses, dtype=np.float32)
         l.tofile("adam.bin")
-        plt.plot(losses)
-        plt.savefig("adam2.jpg")
+        #plt.plot(losses)
+        #plt.savefig("adam2.jpg")
         #print(W)
-
 
 
 trainer = train(sess)
@@ -145,8 +143,9 @@ trainer.out_grads()
 trainer.apply_grads()
 trainer.update()
 tl.layers.initialize_global_variables(sess)
-for i in range(1):
-    trainer.train_contrast()
+trainer.train_contrast()
+trainer.train_one_fun()
+
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
