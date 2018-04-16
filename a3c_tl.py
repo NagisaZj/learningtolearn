@@ -275,6 +275,8 @@ if __name__ == "__main__":
     COORD.join(worker_threads)
 
     GLOBAL_AC.save_ckpt()
+    reward = np.array(GLOBAL_RUNNING_R, dtype=np.float32)
+    reward.tofile("aa.bin")
 
     ###============================= EVALUATION =============================###
     # env = gym.make(GAME)
