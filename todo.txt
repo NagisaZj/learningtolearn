@@ -1,0 +1,21 @@
+﻿尚需完善的工作：
+
+1.（urgent！）agent如果返回的动作在当前状态是不可用的，那么环境会报错并直接关掉。
+Deepmind 的做法是“ masking out actions and renormalising the probability distribution over a 0 “，但现在我还没想好代码实现。
+这是目前最重要的任务！
+1.3更新：已完成！
+
+
+2.关于损失函数（important！）
+由于在本项目中不同动作数的参数个数不同，因此各个动作的entropy和log probability需要进行特殊处理，具体见代码。
+
+3.关于数据预处理
+
+Deepmind有一句话我没读懂：“We embed all feature layers containing categorical values into a continuous space which is
+equivalent to using a one-hot encoding in the channel dimension followed by a 1 × 1 convolution.”
+如果有人知道应该如何操作请告诉我，也可以在gitlab上新建tag来说明。
+
+
+4.（NEW!）
+代码现在可以运行，但是只有第一个episode能够正常训练，之后输出的动作概率为nan，需要debug。
+1.3更新：bug已修复
