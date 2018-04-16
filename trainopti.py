@@ -146,7 +146,7 @@ tl.layers.initialize_global_variables(sess)
 trainer.train_contrast()
 trainer.train_one_fun()
 
-#trainer.save_opti()
+trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
