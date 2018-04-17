@@ -29,10 +29,10 @@ class train:
 
     def build_whole(self):
         self.build_target_net(0)
-        self.build_opti()
-        self.out_grads()
-        self.apply_grads()
-        self.update()
+        #self.build_opti()
+        #self.out_grads()
+        #self.apply_grads()
+        #self.update()
         tl.layers.initialize_global_variables(sess)
 
     def build_target_net(self,times):
@@ -41,7 +41,7 @@ class train:
             self.input = tf.placeholder(tf.float32,[None,n_dimension])
             net = tl.layers.InputLayer(self.input,"In")
             net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="dense1")
-            net = tl.layers.DenseLayer(net,n_units=1,act =tf.nn.sigmoid,W_init = w_init, name="dense2")
+            net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="dense2")
             output = net.outputs
             self.label = tf.placeholder(tf.float32,[None,1])
             loss = tf.reduce_mean(tf.square(output-self.label))
