@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 
 n_dimension = 784
-net_size = 300
+net_size = 20
 hidden_size=10
 layers = 2
 batch_size = 1
@@ -20,10 +20,11 @@ print (mnist.train.images.shape)
 
 class train:
     def __init__(self,sess):
-        self.optimizers = []
         self.sess = sess
-        self.grad_list = []
-        self.params = []
+        self.state_sigmoid = []
+        self.state_softmax = []
+        self.update_sigmoid = []
+        self.update_softmax = []
         self.build_whole()
         return
 
@@ -56,87 +57,116 @@ class train:
             self.loss_op = self.optimizer.minimize(self.loss)
 
 
-    def opti_util(self,param,num,type):
-        if len(param.shape) == 1:
-            for i in range(param.shape[0]):
-                gra = grader(hidden_size, layers, batch_size, type, lr, self.sess)
-                gra.load()
-                self.optimizers.append(gra)
-                num = num + 1
-        elif len(param.shape) == 2:
-            for i in range(param.shape[0]):
-                for j in range(param.shape[1]):
-                    gra = grader(hidden_size, layers, batch_size, type, lr, self.sess)
-                    gra.load()
-                    self.optimizers.append(gra)
-                    num = num + 1
-        return num
+
 
 
     def build_opti(self):
         num = 0
+        self.sigmoid_optimizer = grader(hidden_size, layers, batch_size, "sigmoid", lr, self.sess)
+        self.sigmoid_optimizer.load()
         for param in self.sigmoid_params:
-            num = self.opti_util(param,num,"sigmoid")
-            self.sigmoid_opti = self.optimizers[num-1]
-
-        for param in self.softmax_params:
-            num = self.opti_util(param,num,"softmax")
-            self.softmax_opti = self.optimizers[num - 1]
-
-    def grad_util(self,grad,num):
-        if len(grad.shape) == 1:
-            for i in range(grad.shape[0]):
-                gra = self.optimizers[num].feed(tf.reshape(grad[i], [1, 1, 1]))
-                self.grad_list.append(gra)
-                num = num + 1
-
-        elif len(grad.shape) == 2:
-            for i in range(grad.shape[0]):
-                for j in range(grad.shape[1]):
-                    gra = self.optimizers[num].feed(tf.reshape(grad[i, j], [1, 1, 1]))
-                    self.grad_list.append(gra)
+            if len(param.shape) == 1:
+                for i in range(param.shape[0]):
+                    self.state_sigmoid.append(self.sigmoid_optimizer.cell.zero_state(batch_size, tf.float32))
                     num = num + 1
-        return num
+            elif len(param.shape) == 2:
+                for i in range(param.shape[0]):
+                    for j in range(param.shape[1]):
+                        self.state_sigmoid.append(self.sigmoid_optimizer.cell.zero_state(batch_size, tf.float32))
+                        num = num + 1
+                        print(num)
+
+        self.softmax_optimizer = grader(hidden_size, layers, batch_size, "softmax", lr, self.sess)
+        self.softmax_optimizer.load()
+        for param in self.softmax_params:
+            if len(param.shape) == 1:
+                for i in range(param.shape[0]):
+                    self.state_softmax.append(self.softmax_optimizer.zero_state(batch_size, tf.float32))
+                    num = num + 1
+            elif len(param.shape) == 2:
+                for i in range(param.shape[0]):
+                    for j in range(param.shape[1]):
+                        self.state_softmax.append(self.softmax_optimizer.zero_state(batch_size, tf.float32))
+                        num = num + 1
+
+
+
 
     def out_grads(self):
         num = 0
         for grad in self.sigmoid_gradients:
-            num = self.grad_util(grad,num)
+            if len(grad.shape) == 1:
+                for i in range(grad.shape[0]):
+                    gra,state = self.sigmoid_optimizer.feed(tf.reshape(grad[i], [1, 1, 1]),self.state_sigmoid[num])
+                    self.state_sigmoid[num] = state
+                    self.update_sigmoid.append(gra)
+                    num = num + 1
 
+            elif len(grad.shape) == 2:
+                for i in range(grad.shape[0]):
+                    for j in range(grad.shape[1]):
+                        gra, state = self.sigmoid_optimizer.feed(tf.reshape(grad[i,j], [1, 1, 1]),
+                                                                 self.state_sigmoid[num])
+                        self.state_sigmoid[num] = state
+                        self.update_sigmoid.append(gra)
+                        num = num + 1
+
+        num = 0
         for grad in self.softmax_gradients:
-            num = self.grad_util(grad,num)
+            if len(grad.shape) == 1:
+                for i in range(grad.shape[0]):
+                    gra,state = self.softmax_optimizer.feed(tf.reshape(grad[i], [1, 1, 1]),self.state_softmax[num])
+                    self.state_softmax[num] = state
+                    self.update_softmax.append(gra)
+                    num = num + 1
 
+            elif len(grad.shape) == 2:
+                for i in range(grad.shape[0]):
+                    for j in range(grad.shape[1]):
+                        gra, state = self.softmax_optimizer.feed(tf.reshape(grad[i,j], [1, 1, 1]),
+                                                                 self.state_softmax[num])
+                        self.state_softmax[num] = state
+                        self.update_softmax.append(gra)
+                        num = num + 1
 
-    def apply_util(self,param,num):
-        if len(param.shape) == 1:
-            for i in range(param.shape[0]):
-                tf.assign(param[i], param[i] + self.grad_list[num])
-                num = num + 1
-
-        elif len(param.shape) == 2:
-            for i in range(param.shape[0]):
-                tf.assign(param[i], param[i] + tf.stack(self.grad_list[num: num + int(param.shape[1])]))
-                num = num + int(param.shape[1])
-        return num
 
 
     def apply_grads(self):
         num = 0
         for param in self.sigmoid_params:
-            num = self.apply_util(param,num)
-        for param in self.softmax_params:
-            num = self.apply_util(param,num)
+            if len(param.shape) == 1:
+                for i in range(param.shape[0]):
+                    tf.assign(param[i], param[i] + self.update_sigmoid[num])
+                    num = num + 1
 
-        self.grad_list = []
+            elif len(param.shape) == 2:
+                for i in range(param.shape[0]):
+                    tf.assign(param[i], param[i] + tf.stack(self.update_sigmoid[num: num + int(param.shape[1])]))
+                    num = num + int(param.shape[1])
+        num = 0
+        for param in self.softmax_params:
+            if len(param.shape) == 1:
+                for i in range(param.shape[0]):
+                    tf.assign(param[i], param[i] + self.update_softmax[num])
+                    num = num + 1
+
+            elif len(param.shape) == 2:
+                for i in range(param.shape[0]):
+                    tf.assign(param[i], param[i] + tf.stack(self.update_softmax[num: num + int(param.shape[1])]))
+                    num = num + int(param.shape[1])
+
+        self.update_sigmoid = []
+        self.update_softmax = []
 
     def update(self):
-        for opt in self.optimizers:
-            opt.train(self.loss)
+
+        self.sigmoid_optimizer.train(self.loss)
+        self.softmax_optimizer.train(self.loss)
 
 
     def save_opti(self):
-        self.sigmoid_opti.save()
-        self.softmax_opti.save()
+        self.sigmoid_optimizer.save()
+        self.softmax_optimizer.save()
 
 
     def train_one_fun(self):
@@ -147,8 +177,8 @@ class train:
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
             loss= self.sess.run([self.loss],feed_dict = feed_dict)
-            for opt in self.optimizers:
-                self.sess.run([opt.train_op],feed_dict = feed_dict)
+            self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
+            self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
                 print(loss)
                 losses.append(loss)
@@ -158,7 +188,6 @@ class train:
         #plt.savefig("rnn2.jpg")
 
     def train_contrast(self):
-        losses = []
         for i in range(train_steps):
             mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
