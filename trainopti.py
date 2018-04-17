@@ -4,14 +4,14 @@ import tensorlayer as tl
 from optimizer import grader
 import matplotlib.pyplot as plt
 
-n_dimension = 20
-net_size = 10
-hidden_size=5
+n_dimension = 2
+net_size = 2
+hidden_size=2
 layers = 2
 batch_size = 1
 lr = 1e-3
 full_batch = 100
-train_steps = 10000
+train_steps = 1000
 sess = tf.Session()
 
 
@@ -97,8 +97,7 @@ class train:
 
 
     def save_opti(self):
-        for opt in self.optimizers:
-            opt.save()
+        self.optimizers[0].save()
 
 
     def train_one_fun(self):
@@ -143,7 +142,7 @@ trainer.out_grads()
 trainer.apply_grads()
 trainer.update()
 tl.layers.initialize_global_variables(sess)
-trainer.train_contrast()
+#trainer.train_contrast()
 trainer.train_one_fun()
 
 trainer.save_opti()

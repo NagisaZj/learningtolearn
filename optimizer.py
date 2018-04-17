@@ -6,8 +6,8 @@ class grader:
     def __init__(self,hidden_size,layers,batch_size,num,lr,sess):
         self.sess = sess
         self.num = num
-        with tf.variable_scope("grader%d"%num) as scope:
-            self.scope = "grader%d"%num
+        with tf.variable_scope("grader",reuse=tf.AUTO_REUSE) as scope:
+            self.scope = "grader"
             self.cell_list = []
             for i in range(layers):
                 self.cell_list.append(tf.nn.rnn_cell.BasicLSTMCell(hidden_size, state_is_tuple=True))
