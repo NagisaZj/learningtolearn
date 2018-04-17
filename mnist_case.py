@@ -40,66 +40,92 @@ class train:
             w_init = tf.contrib.layers.xavier_initializer()
             self.input = tf.placeholder(tf.float32,[None,n_dimension])
             net = tl.layers.InputLayer(self.input,"In")
-            net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="dense1")
-            net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="dense2")
+            net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="sigmoid1")
+            net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="softmax1")
             output = net.outputs
             self.label = tf.placeholder(tf.float32,[None,1])
             loss = tf.reduce_mean(tf.square(output-self.label))
             self.loss = loss
             self.params = net.all_params
+            self.sigmoid_params = net.get_variables_with_name("sigmoid1")
+            self.softmax_params = net.get_variables_with_name("softmax1")
             self.gradients = tf.gradients(loss,self.params)
+            self.sigmoid_gradients = tf.gradients(loss,self.sigmoid_params)
+            self.softmax_gradients = tf.gradients(loss, self.softmax_params)
             self.optimizer = tf.train.AdamOptimizer(1e-3)
             self.loss_op = self.optimizer.minimize(self.loss)
 
 
-
-    def build_opti(self):
-        num = 0
-        for param in self.params:
-            if len(param.shape) ==1:
-                for i in range(param.shape[0]):
+    def opti_util(self,param,num,type):
+        if len(param.shape) == 1:
+            for i in range(param.shape[0]):
+                gra = grader(hidden_size, layers, batch_size, type, lr, self.sess)
+                gra.load()
+                self.optimizers.append(gra)
+                num = num + 1
+        elif len(param.shape) == 2:
+            for i in range(param.shape[0]):
+                for j in range(param.shape[1]):
                     gra = grader(hidden_size, layers, batch_size, num, lr, self.sess)
                     gra.load()
                     self.optimizers.append(gra)
                     num = num + 1
+        return num
 
-            elif len(param.shape) ==2:
-                for i in range(param.shape[0]):
-                    for j in range(param.shape[1]):
-                        gra = grader(hidden_size, layers, batch_size, num, lr, self.sess)
-                        gra.load()
-                        self.optimizers.append(gra)
-                        num = num + 1
+
+    def build_opti(self):
+        num = 0
+        for param in self.sigmoid_params:
+            num = self.opti_util(param,num,"sigmoid")
+            self.sigmoid_opti = self.optimizers[num-1]
+
+        for param in self.softmax_params:
+            num = self.opti_util(param,num,"softmax")
+            self.softmax_opti = self.optimizers[num - 1]
+
+    def grad_util(self,grad,num):
+        if len(grad.shape) == 1:
+            for i in range(grad.shape[0]):
+                gra = self.optimizers[num].feed(tf.reshape(grad[i], [1, 1, 1]))
+                self.grad_list.append(gra)
+                num = num + 1
+
+        elif len(grad.shape) == 2:
+            for i in range(grad.shape[0]):
+                for j in range(grad.shape[1]):
+                    gra = self.optimizers[num].feed(tf.reshape(grad[i, j], [1, 1, 1]))
+                    self.grad_list.append(gra)
+                    num = num + 1
+        return num
 
     def out_grads(self):
         num = 0
-        for grad in self.gradients:
-            if len(grad.shape) == 1 :
-                for i in range(grad.shape[0]):
-                    gra =self.optimizers[num].feed(tf.reshape(grad[i],[1,1,1]))
-                    self.grad_list.append(gra)
-                    num = num + 1
+        for grad in self.sigmoid_gradients:
+            num = self.grad_util(grad,num)
 
-            elif len(grad.shape) == 2 :
-                for i in range(grad.shape[0]):
-                    for j in range(grad.shape[1]):
-                        gra =self.optimizers[num].feed(tf.reshape(grad[i,j],[1,1,1]))
-                        self.grad_list.append(gra)
-                        num = num + 1
+        for grad in self.softmax_gradients:
+            num = self.grad_util(grad,num)
+
+
+    def apply_util(self,param,num):
+        if len(param.shape) == 1:
+            for i in range(param.shape[0]):
+                tf.assign(param[i], param[i] + self.grad_list[num])
+                num = num + 1
+
+        elif len(param.shape) == 2:
+            for i in range(param.shape[0]):
+                tf.assign(param[i], param[i] + tf.stack(self.grad_list[num: num + int(param.shape[1])]))
+                num = num + int(param.shape[1])
+        return num
+
 
     def apply_grads(self):
         num = 0
-        for param in self.params:
-            if len(param.shape) == 1 :
-                for i in range(param.shape[0]):
-                    tf.assign(param[i] , param[i]+self.grad_list[num])
-                    num = num + 1
-
-            elif len(param.shape) == 2 :
-                for i in range(param.shape[0]):
-                    tf.assign(param[i], param[i]+tf.stack(self.grad_list[ num : num + int(param.shape[1]) ]))
-                    num = num + int(param.shape[1])
-
+        for param in self.sigmoid_params:
+            num = self.apply_util(param,num)
+        for param in self.softmax_params:
+            num = self.apply_util(param,num)
 
         self.grad_list = []
 
@@ -109,7 +135,8 @@ class train:
 
 
     def save_opti(self):
-        self.optimizers[0].save()
+        self.sigmoid_opti.save()
+        self.softmax_opti.save()
 
 
     def train_one_fun(self):
