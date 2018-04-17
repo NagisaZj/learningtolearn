@@ -29,10 +29,10 @@ class train:
 
     def build_whole(self):
         self.build_target_net(0)
-        #self.build_opti()
-        #self.out_grads()
-        #self.apply_grads()
-        #self.update()
+        self.build_opti()
+        self.out_grads()
+        self.apply_grads()
+        self.update()
         tl.layers.initialize_global_variables(sess)
 
     def build_target_net(self,times):
@@ -43,12 +43,12 @@ class train:
             net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="sigmoid1")
             net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="softmax1")
             output = net.outputs
-            self.label = tf.placeholder(tf.float32,[None,1])
+            self.label = tf.placeholder(tf.float32,[None,10])
             loss = tf.reduce_mean(tf.square(output-self.label))
             self.loss = loss
             self.params = net.all_params
-            self.sigmoid_params = net.get_variables_with_name("sigmoid1")
-            self.softmax_params = net.get_variables_with_name("softmax1")
+            self.sigmoid_params = tl.layers.get_variables_with_name("optimizee%d/sigmoid1"%times)
+            self.softmax_params = tl.layers.get_variables_with_name("optimizee%d/softmax1"%times)
             self.gradients = tf.gradients(loss,self.params)
             self.sigmoid_gradients = tf.gradients(loss,self.sigmoid_params)
             self.softmax_gradients = tf.gradients(loss, self.softmax_params)
@@ -66,7 +66,7 @@ class train:
         elif len(param.shape) == 2:
             for i in range(param.shape[0]):
                 for j in range(param.shape[1]):
-                    gra = grader(hidden_size, layers, batch_size, num, lr, self.sess)
+                    gra = grader(hidden_size, layers, batch_size, type, lr, self.sess)
                     gra.load()
                     self.optimizers.append(gra)
                     num = num + 1
@@ -158,6 +158,7 @@ class train:
         #plt.savefig("rnn2.jpg")
 
     def train_contrast(self):
+        losses = []
         for i in range(train_steps):
             mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
@@ -177,8 +178,8 @@ class train:
 
 trainer = train(sess)
 
-trainer.train_contrast()
-#trainer.train_one_fun()
+#trainer.train_contrast()
+trainer.train_one_fun()
 
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)

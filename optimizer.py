@@ -5,7 +5,7 @@ import numpy as np
 class grader:
     def __init__(self,hidden_size,layers,batch_size,type,lr,sess):
         self.sess = sess
-        self.num = num
+        #self.num = num
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
