@@ -5,7 +5,7 @@ import numpy as np
 class grader:
     def __init__(self,hidden_size,layers,batch_size,type,lr,sess):
         self.sess = sess
-        #self.num = num
+        self.type = type
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
@@ -19,13 +19,13 @@ class grader:
             self.optimizer = tf.train.AdamOptimizer(lr)
 
     def feed(self,input,state):
-        with tf.variable_scope(typereuse=tf.AUTO_REUSE) as scope:
+        with tf.variable_scope(self.type,reuse=tf.AUTO_REUSE) as scope:
             self.output,state_after = tf.nn.dynamic_rnn(self.cell, input,initial_state=state, time_major=False)
             self.out = tf.matmul(self.output[:,-1,:],self.W) +self.b
             return self.out,state_after
 
     def train(self,loss):
-        with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
+        with tf.variable_scope(self.type,reuse=tf.AUTO_REUSE) as scope:
             grads = tf.gradients(loss, self.tvars)
             self.train_op = self.optimizer.apply_gradients(zip(grads, self.tvars))
 

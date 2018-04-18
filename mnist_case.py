@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 
 n_dimension = 784
-net_size = 20
+net_size = 1
 hidden_size=10
 layers = 2
 batch_size = 1
 lr = 1e-3
 full_batch = 128
-train_steps = 1000
+train_steps = 10000
 sess = tf.Session()
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -81,12 +81,12 @@ class train:
         for param in self.softmax_params:
             if len(param.shape) == 1:
                 for i in range(param.shape[0]):
-                    self.state_softmax.append(self.softmax_optimizer.zero_state(batch_size, tf.float32))
+                    self.state_softmax.append(self.softmax_optimizer.cell.zero_state(batch_size, tf.float32))
                     num = num + 1
             elif len(param.shape) == 2:
                 for i in range(param.shape[0]):
                     for j in range(param.shape[1]):
-                        self.state_softmax.append(self.softmax_optimizer.zero_state(batch_size, tf.float32))
+                        self.state_softmax.append(self.softmax_optimizer.cell.zero_state(batch_size, tf.float32))
                         num = num + 1
 
 
@@ -170,6 +170,7 @@ class train:
 
 
     def train_one_fun(self):
+        #self.build_whole()
         losses = []
         for i in range(train_steps):
             mini_batch = mnist.train.next_batch(full_batch)
@@ -188,6 +189,8 @@ class train:
         #plt.savefig("rnn2.jpg")
 
     def train_contrast(self):
+        #self.build_target_net(0)
+        losses = []
         for i in range(train_steps):
             mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
@@ -207,8 +210,8 @@ class train:
 
 trainer = train(sess)
 
-#trainer.train_contrast()
-trainer.train_one_fun()
+trainer.train_contrast()
+#trainer.train_one_fun()
 
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
