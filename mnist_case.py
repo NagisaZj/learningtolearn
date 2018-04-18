@@ -139,8 +139,8 @@ class train:
                     self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_softmax[num: num + int(param.shape[0])])))
                     num = num + int(param.shape[0])
 
-        self.update_sigmoid = None
-        self.update_softmax = None
+        #self.update_sigmoid = None
+        #self.update_softmax = None
 
     def update(self):
 
@@ -162,11 +162,11 @@ class train:
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
             loss= self.sess.run([self.loss],feed_dict = feed_dict)
-            self.out_grads()
+            #self.out_grads()
             self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
             #self.apply_grads()
-            #self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
-            #self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
+            self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
+            self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
                 print(loss)
                 losses.append(loss)
