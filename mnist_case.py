@@ -31,8 +31,8 @@ class train:
     def build_whole(self):
         self.build_target_net(0)
         self.build_opti()
-        self.out_grads()
-        self.apply_grads()
+        #self.out_grads()
+        #self.apply_grads()
         self.update()
         tl.layers.initialize_global_variables(sess)
 
@@ -87,11 +87,11 @@ class train:
 
 
 
-    def out_grads(self):
+    def out_grads(self,sigmoid_gradients,softmax_gradients):
         num = 0
         grad_sigmoid = None
         grad_softmax = None
-        for grad in self.sigmoid_gradients:
+        for grad in sigmoid_gradients:
             if len(grad.shape) == 1:
                 grad_sigmoid = grad if grad_sigmoid is None else tf.concat([grad_sigmoid,grad],0)
 
@@ -103,7 +103,7 @@ class train:
         self.update_sigmoid,self.state_sigmoid = self.sigmoid_optimizer.feed(
             tf.reshape(grad_sigmoid, [-1, 1, 1]),self.state_sigmoid)
 
-        for grad in self.softmax_gradients:
+        for grad in softmax_gradients:
             if len(grad.shape) == 1:
                 grad_softmax = grad if grad_softmax is None else tf.concat([grad_softmax,grad],0)
             elif len(grad.shape) == 2:
@@ -161,8 +161,8 @@ class train:
             W = mini_batch[0]
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
-            loss= self.sess.run([self.loss],feed_dict = feed_dict)
-            #self.out_grads()
+            loss,sigmoid_gradients,softmax_gradients= self.sess.run([self.loss,self.sigmoid_gradients,self.softmax_gradients],feed_dict = feed_dict)
+            self.out_grads(sigmoid_gradients,softmax_gradients)
             self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
             #self.apply_grads()
             self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
