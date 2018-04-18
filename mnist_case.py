@@ -62,7 +62,7 @@ class train:
         tl.files.save_ckpt(sess=self.sess, mode_name='model.ckpt', var_list=self.params,
                            save_dir="model", printable=False)
 
-    def load(self):
+    def load_ckpt(self):
         tl.files.load_ckpt(sess=self.sess, var_list=self.params, save_dir="model", printable=False)
 
 
@@ -177,7 +177,7 @@ class train:
                 print(loss)
                 losses.append(loss)
         l = np.array(losses, dtype=np.float32)
-        l.tofile("rnn_over.bin")
+        l.tofile("rnn.bin")
         #plt.plot(losses)
         #plt.savefig("rnn2.jpg")
 
@@ -202,11 +202,11 @@ class train:
 
 
 trainer = train(sess)
-
-#trainer.train_contrast()
-trainer.train_one_fun()
-trainer.save_ckpt()
-#trainer.save_opti()
+#trainer.load_ckpt()
+trainer.train_contrast()
+#trainer.train_one_fun()
+#trainer.save_ckpt()
+trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
