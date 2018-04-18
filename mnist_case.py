@@ -57,7 +57,13 @@ class train:
             self.loss_op = self.optimizer.minimize(self.loss)
 
 
+    def save_ckpt(self):
+        tl.files.exists_or_mkdir("model")
+        tl.files.save_ckpt(sess=self.sess, mode_name='model.ckpt', var_list=self.params,
+                           save_dir="model", printable=False)
 
+    def load(self):
+        tl.files.load_ckpt(sess=self.sess, var_list=self.params, save_dir="model", printable=False)
 
 
     def build_opti(self):
@@ -199,7 +205,7 @@ trainer = train(sess)
 
 #trainer.train_contrast()
 trainer.train_one_fun()
-
+trainer.save_ckpt()
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
