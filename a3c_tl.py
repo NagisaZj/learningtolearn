@@ -117,8 +117,8 @@ class ACNet(object):
         w_init = tf.contrib.layers.xavier_initializer()
         with tf.variable_scope('actor'):        # Policy network
             nn = InputLayer(self.s, name='in')
-            nn = DenseLayer(nn, n_units=500, act=tf.nn.relu6, W_init=w_init, name='la')
-            nn = DenseLayer(nn, n_units=300, act=tf.nn.relu6, W_init=w_init, name='la2')
+            nn = DenseLayer(nn, n_units=50, act=tf.nn.relu6, W_init=w_init, name='la')
+            nn = DenseLayer(nn, n_units=20, act=tf.nn.relu6, W_init=w_init, name='la2')
             mu = DenseLayer(nn, n_units=N_A, act=tf.nn.tanh, W_init=w_init, name='mu')
             sigma = DenseLayer(nn, n_units=N_A, act=tf.nn.softplus, W_init=w_init, name='sigma')
             self.mu = mu.outputs
@@ -126,8 +126,8 @@ class ACNet(object):
 
         with tf.variable_scope('critic'):       # we use Value-function here, but not Q-function.
             nn = InputLayer(self.s, name='in')
-            nn = DenseLayer(nn, n_units=500, act=tf.nn.relu6, W_init=w_init, name='lc')
-            nn = DenseLayer(nn, n_units=200, act=tf.nn.relu6, W_init=w_init, name='lc2')
+            nn = DenseLayer(nn, n_units=50, act=tf.nn.relu6, W_init=w_init, name='lc')
+            nn = DenseLayer(nn, n_units=20, act=tf.nn.relu6, W_init=w_init, name='lc2')
             v = DenseLayer(nn, n_units=1, W_init=w_init, name='v')
             self.v = v.outputs
 
