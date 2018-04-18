@@ -161,13 +161,15 @@ class train:
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
             loss= self.sess.run([self.loss],feed_dict = feed_dict)
-            self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
-            self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
+            self.out_grads()
+            self.apply_grads()
+            #self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
+            #self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
                 print(loss)
                 losses.append(loss)
         l = np.array(losses, dtype=np.float32)
-        l.tofile("rnn.bin")
+        l.tofile("rnn_over.bin")
         #plt.plot(losses)
         #plt.savefig("rnn2.jpg")
 
@@ -196,7 +198,7 @@ trainer = train(sess)
 #trainer.train_contrast()
 trainer.train_one_fun()
 
-trainer.save_opti()
+#trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
