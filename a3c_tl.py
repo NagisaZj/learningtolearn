@@ -33,8 +33,8 @@ import numpy as np
 GAME = 'BipedalWalker-v2' # BipedalWalkerHardcore-v2
 OUTPUT_GRAPH = False
 LOG_DIR = './log'
-N_WORKERS = multiprocessing.cpu_count()
-# N_WORKERS = 4
+#N_WORKERS = multiprocessing.cpu_count()
+N_WORKERS = 16
 MAX_GLOBAL_EP = 5000#8000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 10
@@ -117,8 +117,8 @@ class ACNet(object):
         w_init = tf.contrib.layers.xavier_initializer()
         with tf.variable_scope('actor'):        # Policy network
             nn = InputLayer(self.s, name='in')
-            nn = DenseLayer(nn, n_units=50, act=tf.nn.relu6, W_init=w_init, name='la')
-            nn = DenseLayer(nn, n_units=20, act=tf.nn.relu6, W_init=w_init, name='la2')
+            nn = DenseLayer(nn, n_units=100, act=tf.nn.relu6, W_init=w_init, name='la')
+            nn = DenseLayer(nn, n_units=50, act=tf.nn.relu6, W_init=w_init, name='la2')
             mu = DenseLayer(nn, n_units=N_A, act=tf.nn.tanh, W_init=w_init, name='mu')
             sigma = DenseLayer(nn, n_units=N_A, act=tf.nn.softplus, W_init=w_init, name='sigma')
             self.mu = mu.outputs
@@ -130,6 +130,7 @@ class ACNet(object):
             nn = DenseLayer(nn, n_units=20, act=tf.nn.relu6, W_init=w_init, name='lc2')
             v = DenseLayer(nn, n_units=1, W_init=w_init, name='v')
             self.v = v.outputs
+            tl.layers.initialize_global_variables(sess)
 
     def update_global(self, feed_dict):  # run by a local
         _, _, t = sess.run([self.update_a_op, self.update_c_op, self.test], feed_dict)  # local grads applies to global net
