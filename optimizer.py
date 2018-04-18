@@ -3,16 +3,15 @@ import tensorlayer as tl
 import numpy as np
 
 class grader:
-    def __init__(self,hidden_size,layers,batch_size,type,lr,sess):
+    def __init__(self,hidden_size,layers,type,lr,sess):
         self.sess = sess
         self.type = type
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
             for i in range(layers):
-                self.cell_list.append(tf.nn.rnn_cell.BasicLSTMCell(hidden_size, state_is_tuple=True))
-            self.cell = tf.nn.rnn_cell.MultiRNNCell(self.cell_list, state_is_tuple=True)
-            #self.state = self.cell.zero_state(batch_size, tf.float32)
+                self.cell_list.append(tf.nn.rnn_cell.BasicLSTMCell(hidden_size, state_is_tuple=False))
+            self.cell = tf.nn.rnn_cell.MultiRNNCell(self.cell_list, state_is_tuple=False)
             self.W = tf.get_variable("W",[hidden_size,1],dtype=tf.float32)
             self.b = tf.get_variable("b",[1],dtype = tf.float32)
             self.tvars =  tf.trainable_variables()
