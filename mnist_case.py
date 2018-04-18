@@ -117,25 +117,26 @@ class train:
         self.update_softmax = tf.reshape(self.update_softmax, [self.update_softmax.shape[0]])
 
     def apply_grads(self):
+        self.apply_grad_op = []
         num = 0
         for param in self.sigmoid_params:
             if len(param.shape) == 1:
-                tf.assign(param, param + self.update_sigmoid[num:num + int(param.shape[0])])
+                self.apply_grad_op.append(tf.assign(param, param + self.update_sigmoid[num:num + int(param.shape[0])]))
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
                 for i in range(param.shape[1]):
-                    tf.assign(param[:,i], param[:,i] + tf.stack(self.update_sigmoid[num: num + int(param.shape[0])]))
+                    self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_sigmoid[num: num + int(param.shape[0])])))
                     num = num + int(param.shape[0])
         num = 0
         for param in self.softmax_params:
             if len(param.shape) == 1:
-                tf.assign(param, param + self.update_softmax[num:num + int(param.shape[0])])
+                self.apply_grad_op.append(tf.assign(param, param + self.update_softmax[num:num + int(param.shape[0])]))
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
                 for i in range(param.shape[1]):
-                    tf.assign(param[:,i], param[:,i] + tf.stack(self.update_softmax[num: num + int(param.shape[0])]))
+                    self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_softmax[num: num + int(param.shape[0])])))
                     num = num + int(param.shape[0])
 
         self.update_sigmoid = None
@@ -162,7 +163,8 @@ class train:
             feed_dict = {self.input: W, self.label: y}
             loss= self.sess.run([self.loss],feed_dict = feed_dict)
             self.out_grads()
-            self.apply_grads()
+            self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
+            #self.apply_grads()
             #self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
             #self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
