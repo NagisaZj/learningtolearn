@@ -6,10 +6,11 @@ class grader:
     def __init__(self,hidden_size,type,lr,sess,input):
         self.sess = sess
         self.type = type
+        self.input = input
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
-            self.rnn = tl.layers.InputLayer(input,name="in")
+            self.rnn = tl.layers.InputLayer(self.input,name="in")
             self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = False,name="rnn1")
             self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")
             self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,W_init=tf.truncated_normal_initializer(stddev=0.1),name = "dense_opti")

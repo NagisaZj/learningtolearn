@@ -12,7 +12,7 @@ layers = 2
 #batch_size = 1
 lr = 1e-3
 full_batch = 128
-train_steps = 10000
+train_steps = 10
 sess = tf.Session()
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -125,11 +125,11 @@ class train:
         num = 0
         for param in self.sigmoid_params:
             if len(param.shape) == 1:
-                param=param + self.update_sigmoid[num:num + int(param.shape[0])]
+                param = param + self.update_sigmoid[num:num + int(param.shape[0])]
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
-                param= param + tf.reshape(tf.stack(self.update_sigmoid[num: num + int(param.shape[0]*int(param.shape[1]))]),[param.shape[0],param.shape[1]])
+                param= param + tf.reshape(self.update_sigmoid[num: num + int(param.shape[0]*int(param.shape[1]))],[param.shape[0],param.shape[1]])
                 num = num + int(param.shape[0])*int(param.shape[1])
         num = 0
         for param in self.softmax_params:
@@ -139,7 +139,7 @@ class train:
 
             elif len(param.shape) == 2:
                 param = param + tf.reshape(
-                        tf.stack(self.update_softmax[num: num + int(param.shape[0]) * int(param.shape[1])]),
+                        self.update_softmax[num: num + int(param.shape[0]) * int(param.shape[1])],
                         [param.shape[0], param.shape[1]])
                 num = num + int(param.shape[0]) * int(param.shape[1])
         self.loss = tf.reduce_mean(tf.square(self.output-self.label))
@@ -160,13 +160,17 @@ class train:
     def train_one_fun(self):
         #self.build_whole()
         losses = []
+
         for i in range(train_steps):
             mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
-            loss,sigmoid_params,softmax_gradients,update_softmax= self.sess.run([self.loss,self.sigmoid_params,self.softmax_gradients,self.update_softmax],feed_dict = feed_dict)
-            print(sigmoid_params[0][0][0])
+            loss,sigmoid_params,softmax_gradients,update_sigmoid= self.sess.run([self.loss,self.sigmoid_params,self.softmax_gradients,self.sigmoid_optimizer.output],feed_dict = feed_dict)
+            print(sigmoid_params[0][0][65])
+
+            print(update_sigmoid.nonzero())
+
             #print(update_softmax)
             #self.out_grads(sigmoid_gradients,softmax_gradients)
             #self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
@@ -177,6 +181,10 @@ class train:
             if i %10 ==0:
                 print(loss)
                 losses.append(loss)
+
+
+        writer = tf.summary.FileWriter("D://sc_a3c//logs", self.sess.graph)
+        writer.close()
         l = np.array(losses, dtype=np.float32)
         l.tofile("rnn.bin")
         #plt.plot(losses)
