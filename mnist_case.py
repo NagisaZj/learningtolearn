@@ -33,7 +33,7 @@ class train:
         self.out_grads()
         self.build_opti()
         self.apply_grads()
-        self.update()
+        #self.update()
         tl.layers.initialize_global_variables(sess)
 
     def build_target_net(self,times):
@@ -43,9 +43,9 @@ class train:
             net = tl.layers.InputLayer(self.input,"In")
             net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="sigmoid1")
             net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="softmax1")
-            output = net.outputs
+            self.output = net.outputs
             self.label = tf.placeholder(tf.float32,[None,10])
-            loss = tf.reduce_mean(tf.square(output-self.label))
+            loss = tf.reduce_mean(tf.square(self.output-self.label))
             self.loss = loss
             self.params = net.all_params
             self.sigmoid_params = tl.layers.get_variables_with_name("optimizee%d/sigmoid1"%times)
@@ -147,6 +147,7 @@ class train:
                 for i in range(param.shape[1]):
                     self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_softmax[num: num + int(param.shape[0])])))
                     num = num + int(param.shape[0])
+        self.loss = tf.reduce_mean(tf.square(self.output-self.label))
 
         #self.update_sigmoid = None
         #self.update_softmax = None
@@ -171,8 +172,9 @@ class train:
             feed_dict = {self.input: W, self.label: y}
             loss,sigmoid_gradients,softmax_gradients= self.sess.run([self.loss,self.sigmoid_gradients,self.softmax_gradients],feed_dict = feed_dict)
             #self.out_grads(sigmoid_gradients,softmax_gradients)
-            #self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
+            self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
             #self.apply_grads()
+            self.update()
             self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
             self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
