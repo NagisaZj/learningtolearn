@@ -38,7 +38,7 @@ class train:
 
     def build_target_net(self,times):
         with tf.variable_scope("optimizee%d"%times) as scope:
-            w_init = tf.contrib.layers.xavier_initializer()
+            w_init =tf.truncated_normal_initializer(stddev=0.1)
             self.input = tf.placeholder(tf.float32,[None,n_dimension])
             net = tl.layers.InputLayer(self.input,"In")
             net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="sigmoid1")
@@ -64,34 +64,6 @@ class train:
 
     def load_ckpt(self):
         tl.files.load_ckpt(sess=self.sess, var_list=self.params, save_dir="model", printable=False)
-
-
-    def build_opti(self):
-        self.sigmoid_num = 0
-        self.sigmoid_optimizer = grader(hidden_size, "sd", lr, self.sess,self.grad_sigmoid)
-        self.sigmoid_optimizer.load()
-        for param in self.sigmoid_params:
-            if len(param.shape) == 1:
-                self.sigmoid_num = self.sigmoid_num + int(param.shape[0])
-            elif len(param.shape) == 2:
-                self.sigmoid_num = self.sigmoid_num + int(param.shape[0]) * int(param.shape[1])
-        #self.state_sigmoid = self.sigmoid_optimizer.cell.zero_state(self.sigmoid_num, tf.float32)
-        #print(self.state_sigmoid)
-
-
-        self.softmax_num = 0
-        self.softmax_optimizer = grader(hidden_size, "sx", lr, self.sess,self.grad_softmax)
-        self.softmax_optimizer.load()
-        for param in self.softmax_params:
-            if len(param.shape) == 1:
-                self.softmax_num = self.softmax_num + int(param.shape[0])
-            elif len(param.shape) == 2:
-                self.softmax_num = self.softmax_num + int(param.shape[0]) * int(param.shape[1])
-        #self.state_softmax = self.softmax_optimizer.cell.zero_state(self.softmax_num, tf.float32)
-
-
-
-
 
     def out_grads(self):
         num = 0
@@ -121,6 +93,29 @@ class train:
         #self.update_sigmoid = tf.reshape(self.update_sigmoid,[self.update_sigmoid.shape[0]])
         #self.update_softmax = tf.reshape(self.update_softmax, [self.update_softmax.shape[0]])
 
+    def build_opti(self):
+        self.sigmoid_num = 0
+        self.sigmoid_optimizer = grader(hidden_size, "sd", lr, self.sess,self.grad_sigmoid)
+        self.sigmoid_optimizer.load()
+        for param in self.sigmoid_params:
+            if len(param.shape) == 1:
+                self.sigmoid_num = self.sigmoid_num + int(param.shape[0])
+            elif len(param.shape) == 2:
+                self.sigmoid_num = self.sigmoid_num + int(param.shape[0]) * int(param.shape[1])
+        #self.state_sigmoid = self.sigmoid_optimizer.cell.zero_state(self.sigmoid_num, tf.float32)
+        #print(self.state_sigmoid)
+
+
+        self.softmax_num = 0
+        self.softmax_optimizer = grader(hidden_size, "sx", lr, self.sess,self.grad_softmax)
+        self.softmax_optimizer.load()
+        for param in self.softmax_params:
+            if len(param.shape) == 1:
+                self.softmax_num = self.softmax_num + int(param.shape[0])
+            elif len(param.shape) == 2:
+                self.softmax_num = self.softmax_num + int(param.shape[0]) * int(param.shape[1])
+        #self.state_softmax = self.softmax_optimizer.cell.zero_state(self.softmax_num, tf.float32)
+
     def apply_grads(self):
         self.update_sigmoid = self.sigmoid_optimizer.output
         self.update_softmax = self.softmax_optimizer.output
@@ -130,7 +125,7 @@ class train:
         num = 0
         for param in self.sigmoid_params:
             if len(param.shape) == 1:
-                self.apply_grad_op.append(tf.assign(param, param + self.update_sigmoid[num:num + int(param.shape[0])]))
+                param=param + self.update_sigmoid[num:num + int(param.shape[0])]
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
@@ -139,13 +134,14 @@ class train:
         num = 0
         for param in self.softmax_params:
             if len(param.shape) == 1:
-                self.apply_grad_op.append(tf.assign(param, param + self.update_softmax[num:num + int(param.shape[0])]))
+                param=param + self.update_softmax[num:num + int(param.shape[0])]
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
-                for i in range(param.shape[1]):
-                    self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_softmax[num: num + int(param.shape[0])])))
-                    num = num + int(param.shape[0])
+                param = param + tf.reshape(
+                        tf.stack(self.update_softmax[num: num + int(param.shape[0]) * int(param.shape[1])]),
+                        [param.shape[0], param.shape[1]])
+                num = num + int(param.shape[0]) * int(param.shape[1])
         self.loss = tf.reduce_mean(tf.square(self.output-self.label))
 
         #self.update_sigmoid = None
@@ -169,13 +165,15 @@ class train:
             W = mini_batch[0]
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
-            loss,sigmoid_gradients,softmax_gradients= self.sess.run([self.loss,self.sigmoid_gradients,self.softmax_gradients],feed_dict = feed_dict)
+            loss,sigmoid_params,softmax_gradients,update_softmax= self.sess.run([self.loss,self.sigmoid_params,self.softmax_gradients,self.update_softmax],feed_dict = feed_dict)
+            print(sigmoid_params[0][0][0])
+            #print(update_softmax)
             #self.out_grads(sigmoid_gradients,softmax_gradients)
-            self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
+            #self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
             #self.apply_grads()
-            self.update()
-            self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
-            self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
+            #self.update()
+            #self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
+            #self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
             if i %10 ==0:
                 print(loss)
                 losses.append(loss)

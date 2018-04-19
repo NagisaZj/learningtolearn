@@ -10,9 +10,9 @@ class grader:
             self.scope = type
             self.cell_list = []
             self.rnn = tl.layers.InputLayer(input,name="in")
-            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,return_last = False,return_seq_2d = False,name="rnn1")
-            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,return_last = False,return_seq_2d = True,name = "rnn2")
-            self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,name = "dense_opti")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = False,name="rnn1")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")
+            self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,W_init=tf.truncated_normal_initializer(stddev=0.1),name = "dense_opti")
             self.output = self.rnn.outputs
             #self.W = tf.get_variable("W",[hidden_size,1],dtype=tf.float32)
             #self.b = tf.get_variable("b",[1],dtype = tf.float32)
@@ -21,16 +21,13 @@ class grader:
             print(self.tvars)
             self.optimizer = tf.train.AdamOptimizer(lr)
 
-    def feed(self,input,state):
-        with tf.variable_scope(self.type,reuse=tf.AUTO_REUSE) as scope:
-            self.output,state_after = tf.nn.dynamic_rnn(self.cell, input,initial_state=state, time_major=False)
-            self.out = tf.matmul(self.output[:,-1,:],self.W) +self.b
-            return self.out,state_after
+
 
     def train(self,loss):
-        with tf.variable_scope(self.type,reuse=tf.AUTO_REUSE) as scope:
-            grads = tf.gradients(loss, self.tvars)
-            self.train_op = self.optimizer.apply_gradients(zip(grads, self.tvars))
+        #with tf.variable_scope(self.type,reuse=tf.AUTO_REUSE) as scope:
+        grads = tf.gradients(loss, self.tvars)
+        print(grads)
+        self.train_op = self.optimizer.apply_gradients(zip(grads, self.tvars))
 
     def save(self):
         tl.files.exists_or_mkdir(self.scope)
