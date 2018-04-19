@@ -30,8 +30,8 @@ class train:
 
     def build_whole(self):
         self.build_target_net(0)
+        self.out_grads()
         self.build_opti()
-        self.out_grads(self.sigmoid_gradients,self.softmax_gradients)
         self.apply_grads()
         self.update()
         tl.layers.initialize_global_variables(sess)
@@ -53,13 +53,13 @@ class train:
             self.gradients = tf.gradients(loss,self.params)
             self.sigmoid_gradients = tf.gradients(loss,self.sigmoid_params)
             self.softmax_gradients = tf.gradients(loss, self.softmax_params)
-            self.optimizer = tf.train.AdamOptimizer(1e-3)
-            self.loss_op = self.optimizer.minimize(self.loss)
+            #self.optimizer = tf.train.AdamOptimizer(1e-3)
+            #self.loss_op = self.optimizer.minimize(self.loss)
 
 
     def save_ckpt(self):
         tl.files.exists_or_mkdir("model")
-        tl.files.save_ckpt(sess=self.sess, mode_name='model.ckpt', var_list=self.params,
+        tl.files.save_ckpt( sess=self.sess, mode_name='model.ckpt', var_list=self.params,
                            save_dir="model", printable=False)
 
     def load_ckpt(self):
@@ -68,36 +68,36 @@ class train:
 
     def build_opti(self):
         self.sigmoid_num = 0
-        self.sigmoid_optimizer = grader(hidden_size, layers, "sigmoid", lr, self.sess)
+        self.sigmoid_optimizer = grader(hidden_size, "sd", lr, self.sess,self.grad_sigmoid)
         self.sigmoid_optimizer.load()
         for param in self.sigmoid_params:
             if len(param.shape) == 1:
                 self.sigmoid_num = self.sigmoid_num + int(param.shape[0])
             elif len(param.shape) == 2:
                 self.sigmoid_num = self.sigmoid_num + int(param.shape[0]) * int(param.shape[1])
-        self.state_sigmoid = self.sigmoid_optimizer.cell.zero_state(self.sigmoid_num, tf.float32)
-        print(self.state_sigmoid)
+        #self.state_sigmoid = self.sigmoid_optimizer.cell.zero_state(self.sigmoid_num, tf.float32)
+        #print(self.state_sigmoid)
 
 
         self.softmax_num = 0
-        self.softmax_optimizer = grader(hidden_size, layers, "softmax", lr, self.sess)
+        self.softmax_optimizer = grader(hidden_size, "sx", lr, self.sess,self.grad_softmax)
         self.softmax_optimizer.load()
         for param in self.softmax_params:
             if len(param.shape) == 1:
                 self.softmax_num = self.softmax_num + int(param.shape[0])
             elif len(param.shape) == 2:
                 self.softmax_num = self.softmax_num + int(param.shape[0]) * int(param.shape[1])
-        self.state_softmax = self.softmax_optimizer.cell.zero_state(self.softmax_num, tf.float32)
+        #self.state_softmax = self.softmax_optimizer.cell.zero_state(self.softmax_num, tf.float32)
 
 
 
 
 
-    def out_grads(self,sigmoid_gradients,softmax_gradients):
+    def out_grads(self):
         num = 0
         grad_sigmoid = None
         grad_softmax = None
-        for grad in sigmoid_gradients:
+        for grad in self.sigmoid_gradients:
             if len(grad.shape) == 1:
                 grad_sigmoid = grad if grad_sigmoid is None else tf.concat([grad_sigmoid,grad],0)
 
@@ -105,24 +105,27 @@ class train:
                 for j in range(grad.shape[1]):
                     grad_sigmoid = grad[:,j] if grad_sigmoid is None else tf.concat([grad_sigmoid, grad[:,j]],0)
 
+        self.grad_sigmoid = tf.reshape(grad_sigmoid,[-1,1,1])
+        #self.update_sigmoid = self.sigmoid_optimizer.output
 
-        self.update_sigmoid,self.state_sigmoid = self.sigmoid_optimizer.feed(
-            tf.reshape(grad_sigmoid, [-1, 1, 1]),self.state_sigmoid)
-
-        for grad in softmax_gradients:
+        for grad in self.softmax_gradients:
             if len(grad.shape) == 1:
                 grad_softmax = grad if grad_softmax is None else tf.concat([grad_softmax,grad],0)
             elif len(grad.shape) == 2:
                 for j in range(grad.shape[1]):
                     grad_softmax = grad[:,j] if grad_softmax is None else tf.concat([grad_softmax, grad[:,j]],0)
 
-        self.update_softmax,self.state_softmax = self.softmax_optimizer.feed(
-            tf.reshape(grad_softmax, [-1, 1, 1]),self.state_softmax)
-
-        self.update_sigmoid = tf.reshape(self.update_sigmoid,[self.update_sigmoid.shape[0]])
-        self.update_softmax = tf.reshape(self.update_softmax, [self.update_softmax.shape[0]])
+        self.grad_softmax = tf.reshape(grad_softmax,[-1,1,1])
+        #self.update_softmax = self.softmax_optimizer.output
+        
+        #self.update_sigmoid = tf.reshape(self.update_sigmoid,[self.update_sigmoid.shape[0]])
+        #self.update_softmax = tf.reshape(self.update_softmax, [self.update_softmax.shape[0]])
 
     def apply_grads(self):
+        self.update_sigmoid = self.sigmoid_optimizer.output
+        self.update_softmax = self.softmax_optimizer.output
+        self.update_sigmoid = tf.reshape(self.update_sigmoid,[self.update_sigmoid.shape[0]])
+        self.update_softmax = tf.reshape(self.update_softmax,[self.update_softmax.shape[0]])
         self.apply_grad_op = []
         num = 0
         for param in self.sigmoid_params:
@@ -157,7 +160,6 @@ class train:
     def save_opti(self):
         self.sigmoid_optimizer.save()
         self.softmax_optimizer.save()
-
 
     def train_one_fun(self):
         #self.build_whole()
@@ -203,8 +205,8 @@ class train:
 
 trainer = train(sess)
 #trainer.load_ckpt()
-trainer.train_contrast()
-#trainer.train_one_fun()
+#trainer.train_contrast()
+trainer.train_one_fun()
 #trainer.save_ckpt()
 trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)

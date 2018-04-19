@@ -3,18 +3,22 @@ import tensorlayer as tl
 import numpy as np
 
 class grader:
-    def __init__(self,hidden_size,layers,type,lr,sess):
+    def __init__(self,hidden_size,type,lr,sess,input):
         self.sess = sess
         self.type = type
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
-            for i in range(layers):
-                self.cell_list.append(tf.nn.rnn_cell.BasicLSTMCell(hidden_size, state_is_tuple=False))
-            self.cell = tf.nn.rnn_cell.MultiRNNCell(self.cell_list, state_is_tuple=False)
-            self.W = tf.get_variable("W",[hidden_size,1],dtype=tf.float32)
-            self.b = tf.get_variable("b",[1],dtype = tf.float32)
-            self.tvars =  tf.trainable_variables()
+            self.rnn = tl.layers.InputLayer(input,name="in")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,return_last = False,return_seq_2d = False,name="rnn1")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,return_last = False,return_seq_2d = True,name = "rnn2")
+            self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,name = "dense_opti")
+            self.output = self.rnn.outputs
+            #self.W = tf.get_variable("W",[hidden_size,1],dtype=tf.float32)
+            #self.b = tf.get_variable("b",[1],dtype = tf.float32)
+            #self.tvars =  tf.trainable_variables()
+            self.tvars = self.rnn.all_params
+            print(self.tvars)
             self.optimizer = tf.train.AdamOptimizer(lr)
 
     def feed(self,input,state):

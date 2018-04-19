@@ -127,8 +127,8 @@ class Worker(object):
             s = self.env.reset()
             ep_r = 0
             while True:
-                if self.name == 'W_0' and total_step % 30 == 0:
-                    self.env.render()
+                #if self.name == 'W_0' and total_step % 30 == 0:
+                #    self.env.render()
                 a = self.AC.choose_action(s)
                 s_, r, done, info = self.env.step(a)
                 if r == -100: r = -2
@@ -178,6 +178,24 @@ class Worker(object):
                     )
                     GLOBAL_EP += 1
                     break
+
+def test():
+    #print(N_A)
+    ac = ACNet(GLOBAL_NET_SCOPE)
+    env = gym.make(GAME)
+    ac.load_ckpt()
+    s = env.reset()
+    ep_r = 0
+    while True:
+        #env.render()
+        a = ac.choose_action(s)
+        s, r, done, info = env.step(a)
+        if r == -100 : r = -2
+        ep_r += r
+        if done:
+            s = env.reset()
+            print(ep_r)
+            ep_r = 0
 
 if __name__ == "__main__":
     SESS = tf.Session()
