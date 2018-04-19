@@ -134,9 +134,8 @@ class train:
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
-                for i in range(param.shape[1]):
-                    self.apply_grad_op.append(tf.assign(param[:,i], param[:,i] + tf.stack(self.update_sigmoid[num: num + int(param.shape[0])])))
-                    num = num + int(param.shape[0])
+                param= param + tf.reshape(tf.stack(self.update_sigmoid[num: num + int(param.shape[0]*int(param.shape[1]))]),[param.shape[0],param.shape[1]])
+                num = num + int(param.shape[0])*int(param.shape[1])
         num = 0
         for param in self.softmax_params:
             if len(param.shape) == 1:
