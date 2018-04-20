@@ -6,13 +6,14 @@ import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 
 n_dimension = 784
-net_size = 200
-hidden_size = 10
+net_size = 20
+hidden_size = 20
 layers = 2
 #batch_size = 1
-lr = 1e-3
+lr = 1e-5
 full_batch = 128
-train_steps = 1000
+train_steps = 10000
+mini_steps = 20
 sess = tf.Session()
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
@@ -59,8 +60,8 @@ class train:
             self.gradients = tf.gradients(loss,self.params)
             self.sigmoid_gradients = tf.gradients(loss,self.sigmoid_params)
             self.softmax_gradients = tf.gradients(loss, self.softmax_params)
-            #self.optimizer = tf.train.AdamOptimizer(1e-3)
-            #self.loss_op = self.optimizer.minimize(self.loss)
+            self.optimizer = tf.train.AdamOptimizer(1e-3)
+            self.loss_op = self.optimizer.minimize(self.loss)
 
 
     def save_ckpt(self):
@@ -163,14 +164,14 @@ class train:
 
 
         self.y1_new = tf.nn.sigmoid(tf.matmul(self.input, self.sigmoid_params[0]) + self.sigmoid_params[1])
-        self.output_new = tf.nn.sigmoid(tf.matmul(self.y1_new, self.softmax_params[0]) + self.softmax_params[1])
+        self.output_new = tf.nn.softmax(tf.matmul(self.y1_new, self.softmax_params[0]) + self.softmax_params[1])
         self.loss_new = tf.reduce_mean(tf.square(self.output_new-self.label))
         self.assign_op = []
         self.assign_op.append(self.W1.assign(self.sigmoid_params[0]))
         self.assign_op.append(self.b1.assign(self.sigmoid_params[1]))
         self.assign_op.append(self.W2.assign(self.softmax_params[0]))
         self.assign_op.append(self.b2.assign(self.softmax_params[1]))
-        #self.update_sigmoid = None
+        #self.update_sigmoid = Nonet(
         #self.update_softmax = None
 
     def update(self):
@@ -186,13 +187,13 @@ class train:
     def train_one_fun(self):
         #self.build_whole()
         losses = []
-
+        mini_batch = mnist.train.next_batch(full_batch)
         for i in range(train_steps):
-            mini_batch = mnist.train.next_batch(full_batch)
+            #mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
-            loss= self.sess.run([self.loss],feed_dict = feed_dict)
+            #loss= self.sess.run([self.loss],feed_dict = feed_dict)
             #print(sigmoid_params[0][0][65])
 
             #print(update_sigmoid.nonzero())
@@ -202,11 +203,15 @@ class train:
             #self.sess.run([self.apply_grad_op],feed_dict = feed_dict)
             #self.apply_grads()
             #self.update()
-            self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
-            self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
-            self.sess.run([self.apply_grad_op])
+            self.sess.run(self.assign_op,feed_dict = feed_dict)
+            for j in range(mini_steps):
+            	self.sess.run([self.sigmoid_optimizer.train_op],feed_dict = feed_dict)
+            	self.sess.run([self.softmax_optimizer.train_op], feed_dict=feed_dict)
+            #self.sess.run([self.assign_op],feed_dict = feed_dict)
             if i %10 ==0:
-                print(loss)
+                loss,loss_new = self.sess.run([self.loss,self.loss_new],feed_dict = feed_dict)
+                print("loss%f"%loss)
+                print("loss_new%f"%loss_new)
                 losses.append(loss)
 
 
@@ -243,7 +248,7 @@ trainer = train(sess)
 #trainer.train_contrast()
 trainer.train_one_fun()
 #trainer.save_ckpt()
-#trainer.save_opti()
+trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
