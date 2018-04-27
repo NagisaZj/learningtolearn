@@ -12,7 +12,7 @@ layers = 2
 #batch_size = 1
 lr = 1e-5
 full_batch = 128
-train_steps = 10000
+train_steps = 10
 mini_steps = 20
 p = 10
 sess = tf.Session()
@@ -202,7 +202,7 @@ class train:
             sx_true[i,0,0] = np.log(abs(softmax_over[i]))/p if abs(softmax_over[i])>=np.power(np.e,p*-1) else -1
             sx_true[i, 0, 1] = sgn(softmax_over[i]) if abs(softmax_over[i])>=np.power(np.e,p*-1) \
                 else softmax_over[i] * np.power(np.e,p)
-        return sd_true,sx_true
+            return sd_true,sx_true
     def train_one_fun(self):
         #self.build_whole()
         losses = []
