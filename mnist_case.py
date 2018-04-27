@@ -12,7 +12,7 @@ layers = 2
 #batch_size = 1
 lr = 1e-5
 full_batch = 128
-train_steps = 10
+train_steps = 1000
 mini_steps = 20
 p = 10
 sess = tf.Session()
@@ -125,9 +125,9 @@ class train:
 
 
             elif len(param.shape) == 2:
-                params = tf.add(param , tf.reshape(self.update_sigmoid
-                                          [num: num + int(param.shape[0]*int(param.shape[1]))],
-                                          [param.shape[0],param.shape[1]]))
+                params = tf.add(param , tf.transpose(tf.reshape(
+                        self.update_sigmoid[num: num + int(param.shape[0]) * int(param.shape[1])],
+                        [param.shape[1], param.shape[0]])))
                 self.grads_new_sd.append(params)
                 num = num + int(param.shape[0])*int(param.shape[1])
 
@@ -140,9 +140,9 @@ class train:
                 num = num + int(param.shape[0])
 
             elif len(param.shape) == 2:
-                params = tf.add(param , tf.reshape(
+                params = tf.add(param , tf.transpose(tf.reshape(
                         self.update_softmax[num: num + int(param.shape[0]) * int(param.shape[1])],
-                        [param.shape[0], param.shape[1]]))
+                        [param.shape[1], param.shape[0]])))
                 self.grads_new_sx.append(params)
                 num = num + int(param.shape[0]) * int(param.shape[1])
 
