@@ -15,6 +15,7 @@ class grader:
             self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")
             self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,W_init=tf.truncated_normal_initializer(stddev=0.1),name = "dense_opti")
             self.output = self.rnn.outputs
+            self.output = self.output * 0.1
             #self.W = tf.get_variable("W",[hidden_size,1],dtype=tf.float32)
             #self.b = tf.get_variable("b",[1],dtype = tf.float32)
             #self.tvars =  tf.trainable_variables()
