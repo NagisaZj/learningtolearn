@@ -17,7 +17,7 @@ mini_steps = 50
 p = 10
 sess = tf.Session()
 
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
+mnist = input_data.read_data_sets('MNIST_data', one_hot=False)
 print (mnist.train.images.shape)
 
 def sgn(v):
@@ -54,8 +54,8 @@ class train:
             #net = tl.layers.InputLayer(self.input,"In")
             #net = tl.layers.DenseLayer(net,n_units=net_size,act = tf.nn.sigmoid,W_init = w_init, name="sigmoid1")
             #net = tl.layers.DenseLayer(net,n_units=10,act =tf.nn.softmax,W_init = w_init, name="softmax1")
-            self.label = tf.placeholder(tf.float32,[None,10])
-            loss = tf.reduce_mean(tf.square(self.output-self.label))
+            self.label = tf.placeholder(tf.int64,[None])
+            loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.label,logits=self.output))
             self.loss = loss
             self.params = [self.W1,self.b1,self.W2,self.b2]
             self.sigmoid_params =[self.W1,self.b1] #tl.layers.get_variables_with_name("optimizee%d/sigmoid1"%times)
@@ -149,7 +149,7 @@ class train:
 
         self.y1_new = tf.nn.sigmoid(tf.matmul(self.input, self.grads_new_sd[0]) + self.grads_new_sd[1])
         self.output_new = tf.nn.softmax(tf.matmul(self.y1_new, self.grads_new_sx[0]) + self.grads_new_sx[1])
-        self.loss_new = tf.reduce_mean(tf.square(self.output_new-self.label))
+        self.loss_new = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.label,logits=self.output_new))
         self.assign_op = []
         self.assign_op.append(self.W1.assign(self.grads_new_sd[0]))
         self.assign_op.append(self.b1.assign(self.grads_new_sd[1]))
@@ -229,8 +229,8 @@ class train:
             feed_opti ={self.input: W,self.sigmoid_optimizer.input:sigmoid_grads,
                         self.softmax_optimizer.input:softmax_grads,self.label:y}
             #self.sess.run(self.assign_op,feed_dict = feed_dict)
-            #for j in range(mini_steps):
-            #    self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
+            for j in range(mini_steps):
+                self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
             self.sess.run([self.assign_op],feed_dict = feed_opti)
             if i %10 ==0:
                 loss,loss_new = self.sess.run([self.loss,self.loss_new],feed_dict = feed_opti)
@@ -272,7 +272,7 @@ trainer = train(sess)
 #trainer.train_contrast()
 trainer.train_one_fun()
 #trainer.save_ckpt()
-#trainer.save_opti()
+trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
