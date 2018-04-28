@@ -13,7 +13,7 @@ layers = 2
 lr = 1e-5
 full_batch = 128
 train_steps = 1000
-mini_steps = 20
+mini_steps = 50
 p = 10
 sess = tf.Session()
 
@@ -229,8 +229,8 @@ class train:
             feed_opti ={self.input: W,self.sigmoid_optimizer.input:sigmoid_grads,
                         self.softmax_optimizer.input:softmax_grads,self.label:y}
             #self.sess.run(self.assign_op,feed_dict = feed_dict)
-            for j in range(mini_steps):
-                self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
+            #for j in range(mini_steps):
+            #    self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
             self.sess.run([self.assign_op],feed_dict = feed_opti)
             if i %10 ==0:
                 loss,loss_new = self.sess.run([self.loss,self.loss_new],feed_dict = feed_opti)
@@ -243,7 +243,7 @@ class train:
         writer = tf.summary.FileWriter("D://sc_a3c//logs", self.sess.graph)
         writer.close()
         l = np.array(losses, dtype=np.float32)
-        l.tofile("rnn.bin")
+        l.tofile("rnn_over.bin")
         #plt.plot(losses)
         #plt.savefig("rnn2.jpg")
 
@@ -271,7 +271,7 @@ trainer = train(sess)
 #trainer.load_ckpt()
 #trainer.train_contrast()
 trainer.train_one_fun()
-trainer.save_ckpt()
+#trainer.save_ckpt()
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
