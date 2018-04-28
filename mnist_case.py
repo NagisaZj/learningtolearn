@@ -206,9 +206,9 @@ class train:
     def train_one_fun(self):
         #self.build_whole()
         losses = []
-        mini_batch = mnist.train.next_batch(full_batch)
+        #mini_batch = mnist.train.next_batch(full_batch)
         for i in range(train_steps):
-            #mini_batch = mnist.train.next_batch(full_batch)
+            mini_batch = mnist.train.next_batch(full_batch)
             W = mini_batch[0]
             y = mini_batch[1]
             feed_dict = {self.input: W, self.label: y}
@@ -269,9 +269,9 @@ class train:
 
 trainer = train(sess)
 #trainer.load_ckpt()
-trainer.train_contrast()
-#trainer.train_one_fun()
-#trainer.save_ckpt()
+#trainer.train_contrast()
+trainer.train_one_fun()
+trainer.save_ckpt()
 #trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
