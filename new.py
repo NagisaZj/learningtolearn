@@ -1,29 +1,3 @@
-"""
-Asynchronous Advantage Actor Critic (A3C) with Continuous Action Space.
-Actor Critic History
-----------------------
-A3C > DDPG (for continuous action space) > AC
-Advantage
-----------
-Train faster and more stable than AC.
-Disadvantage
--------------
-Have bias.
-Reference
-----------
-MorvanZhou's tutorial: https://morvanzhou.github.io/tutorials/
-MorvanZhou's code: https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/experiments/Solve_BipedalWalker/A3C.py
-Environment
------------
-BipedalWalker-v2 : https://gym.openai.com/envs/BipedalWalker-v2
-Reward is given for moving forward, total 300+ points up to the far end.
-If the robot falls, it gets -100. Applying motor torque costs a small amount of
-points, more optimal agent will get better score. State consists of hull angle
-speed, angular velocity, horizontal speed, vertical speed, position of joints
-and joints angular speed, legs contact with ground, and 10 lidar rangefinder
-measurements. There's no coordinates in the state vector.
-"""
-
 import multiprocessing, threading, gym, os, shutil
 import tensorflow as tf
 import tensorlayer as tl
@@ -246,20 +220,20 @@ def test():
 
 if __name__ == "__main__":
     sess = tf.Session()
-    test()
+    #test()
 
 
     ###============================= TRAINING ===============================###
-
-    OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
-    OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
-    GLOBAL_AC = ACNet(GLOBAL_NET_SCOPE)  # we only need its params4
-    #GLOBAL_AC.load_ckpt()
-    workers = []
-    # Create worker
-    for i in range(N_WORKERS):
-        i_name = 'Worker_%i' % i   # worker name
-        workers.append(Worker(i_name, GLOBAL_AC))
+    with tf.device("/cpu:0"):
+        OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
+        OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
+        GLOBAL_AC = ACNet(GLOBAL_NET_SCOPE)  # we only need its params4
+        #GLOBAL_AC.load_ckpt()
+        workers = []
+        # Create worker
+        for i in range(N_WORKERS):
+            i_name = 'Worker_%i' % i   # worker name
+            workers.append(Worker(i_name, GLOBAL_AC))
 
     COORD = tf.train.Coordinator()
     tl.layers.initialize_global_variables(sess)
