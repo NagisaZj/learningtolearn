@@ -21,6 +21,10 @@ GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0    # will increase during training, stop training when it >= MAX_GLOBAL_EP
 hidden_size = 20
 mini_steps = 20
+lr = 1e-3
+p = 10
+def sgn(v):
+    return 1 if v>=0 else -1
 env = gym.make(GAME)
 
 N_S = env.observation_space.shape[0]
@@ -31,14 +35,18 @@ A_BOUND = [env.action_space.low, env.action_space.high]
 
 class ACNet(object):
     def __init__(self, scope, globalAC=None):
-
+        self.globalac = globalAC
         self.scope = scope
         if scope == GLOBAL_NET_SCOPE:
             ## global network only do inference
             with tf.variable_scope(scope):
                 self.s = tf.placeholder(tf.float32, [None, N_S], 'S')
+                self.a_his = tf.placeholder(tf.float32, [None, N_A], 'A')
+                self.v_target = tf.placeholder(tf.float32, [None, 1], 'Vtarget')
                 self._build_net()
                 self.build_opti()
+                self.apply_grads()
+                self.update_opti()
                 self.a_params = self.sd_a_params+self.tanh_params+self.sp_params
                 self.c_params = self.sd_v_params+self.no_params
 
@@ -78,7 +86,7 @@ class ACNet(object):
                     self.A = tf.clip_by_value(tf.squeeze(normal_dist.sample(1), axis=0), *A_BOUND)
 
                 with tf.name_scope('local_grad'):
-                    self.a_params = self.sd_a_params+self.tanh_params+self.sp_param
+                    self.a_params = self.sd_a_params+self.tanh_params+self.sp_params
                     self.c_params = self.sd_v_params+self.no_params
                     self.sd_a_grads = tf.gradients(self.a_loss, self.sd_a_params)
                     self.tanh_grads = tf.gradients(self.a_loss, self.tanh_params)
@@ -90,9 +98,9 @@ class ACNet(object):
                 with tf.name_scope('pull'):
                     self.pull_a_params_op = [l_p.assign(g_p) for l_p, g_p in zip(self.a_params,globalAC.a_params)]
                     self.pull_c_params_op = [l_p.assign(g_p) for l_p, g_p in zip(self.c_params, globalAC.c_params)]
-                with tf.name_scope('push'):
-                    self.update_a_op = OPT_A.apply_gradients(zip(self.a_grads, globalAC.a_params))
-                    self.update_c_op = OPT_C.apply_gradients(zip(self.c_grads, globalAC.c_params))
+                #with tf.name_scope('push'):
+                #    self.update_a_op = OPT_A.apply_gradients(zip(self.a_grads, globalAC.a_params))
+                #    self.update_c_op = OPT_C.apply_gradients(zip(self.c_grads, globalAC.c_params))
 
     def _build_net(self):
         w_init = tf.contrib.layers.xavier_initializer()
@@ -260,14 +268,14 @@ class ACNet(object):
         for param in self.sd_v_params:
 
             if len(param.shape) == 1:
-                params = tf.add(param, self.update_sd_v[num:num + int(param.shape[0])])
+                params = tf.add(param, self.update_sigmoid_v[num:num + int(param.shape[0])])
                 self.grads_new_sd_v.append(params)
                 num = num + int(param.shape[0])
 
 
             elif len(param.shape) == 2:
                 params = tf.add(param, tf.transpose(tf.reshape(
-                    self.update_sd_v[num: num + int(param.shape[0]) * int(param.shape[1])],
+                    self.update_sigmoid_v[num: num + int(param.shape[0]) * int(param.shape[1])],
                     [param.shape[1], param.shape[0]])))
                 self.grads_new_sd_v.append(params)
                 num = num + int(param.shape[0]) * int(param.shape[1])
@@ -331,7 +339,7 @@ class ACNet(object):
     def update_opti(self):
         self.sigmoid_a_optimizer.train(self.a_loss_new)
         self.tanh_optimizer.train(self.a_loss_new)
-        self.sp_a_optimizer.train(self.a_loss_new)
+        self.sp_optimizer.train(self.a_loss_new)
         self.sigmoid_v_optimizer.train(self.c_loss_new)
         self.no_optimizer.train(self.c_loss_new)
 
@@ -500,23 +508,23 @@ class Worker(object):
                     self.preprocess()
                     ## update gradients on global network
                     feed_opti = {
-                        self.AC.s: buffer_s,
-                        self.AC.a_his: buffer_a,
-                        self.AC.v_target: buffer_v_target,
-                        self.AC.sigmoid_a_optimizer.input:self.sd_a,
-                        self.AC.tanh_optimizer.input: self.tanh,
-                        self.AC.sp_optimizer.input: self.sp,
-                        self.AC.sigmoid_v_optimizer.input: self.sd_v,
-                        self.AC.no_optimizer.input: self.no,
+                        self.AC.globalac.s: buffer_s,
+                        self.AC.globalac.a_his: buffer_a,
+                        self.AC.globalac.v_target: buffer_v_target,
+                        self.AC.globalac.sigmoid_a_optimizer.input:self.sd_a,
+                        self.AC.globalac.tanh_optimizer.input: self.tanh,
+                        self.AC.globalac.sp_optimizer.input: self.sp,
+                        self.AC.globalac.sigmoid_v_optimizer.input: self.sd_v,
+                        self.AC.globalac.no_optimizer.input: self.no,
                     }
                     for j in range(mini_steps):
-                        sess.run([self.AC.sigmoid_a_optimizer.train_op,
-                                  self.tanh_optimizer.train_op,
-                                  self.AC.sp_optimizer.train_op,
-                                  self.AC.sigmoid_v_optimizer.train_op,
-                                  self.AC.no_optimizer.train_op],
+                        sess.run([self.AC.globalac.sigmoid_a_optimizer.train_op,
+                                  self.AC.globalac.tanh_optimizer.train_op,
+                                  self.AC.globalac.sp_optimizer.train_op,
+                                  self.AC.globalac.sigmoid_v_optimizer.train_op,
+                                  self.AC.globalac.no_optimizer.train_op],
                                       feed_dict=feed_opti)
-                    self.sess.run([self.AC.assign_op], feed_dict=feed_opti)
+                    sess.run([self.AC.globalac.assign_op], feed_dict=feed_opti)
                     buffer_s, buffer_a, buffer_r = [], [], []
 
                     ## update local network from global network
