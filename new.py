@@ -8,9 +8,9 @@ from optimizer import grader
 GAME = 'BipedalWalker-v2' # BipedalWalkerHardcore-v2
 OUTPUT_GRAPH = False
 LOG_DIR = './log'
-N_WORKERS = 1#multiprocessing.cpu_count()
-# N_WORKERS = 4
-MAX_GLOBAL_EP = 5000#8000
+N_WORKERS = multiprocessing.cpu_count()
+N_WORKERS = 16
+MAX_GLOBAL_EP = 50000#8000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 10
 GAMMA = 0.999
@@ -21,7 +21,7 @@ GLOBAL_RUNNING_R = []
 GLOBAL_EP = 0    # will increase during training, stop training when it >= MAX_GLOBAL_EP
 hidden_size = 20
 mini_steps = 20
-lr = 1e-3
+lr = 5e-3
 p = 10
 def sgn(v):
     return 1 if v>=0 else -1
@@ -108,13 +108,13 @@ class ACNet(object):
             self.W1 = tf.Variable(tf.random_uniform([N_S, 500], -1.0, 1.0), name='W1')
             self.b1 = tf.Variable(tf.zeros(shape=[500]), name='b1')
             self.y1 = tf.nn.relu6(tf.matmul(self.s, self.W1) + self.b1)
-            self.W2 = tf.Variable(tf.random_uniform([500, 300], -1.0, 1.0), name='W2')
-            self.b2 = tf.Variable(tf.zeros(shape=[300]), name='b2')
+            self.W2 = tf.Variable(tf.random_uniform([500, 50], -1.0, 1.0), name='W2')
+            self.b2 = tf.Variable(tf.zeros(shape=[50]), name='b2')
             self.y2 = tf.nn.relu6(tf.matmul(self.y1, self.W2) + self.b2)
-            self.W3 = tf.Variable(tf.random_uniform([300, N_A], -1.0, 1.0), name='W3')
+            self.W3 = tf.Variable(tf.random_uniform([50, N_A], -1.0, 1.0), name='W3')
             self.b3 = tf.Variable(tf.zeros(shape=[N_A]), name='b3')
             self.mu = tf.nn.tanh(tf.matmul(self.y2, self.W3) + self.b3)
-            self.W4 = tf.Variable(tf.random_uniform([300, N_A], -1.0, 1.0), name='W4')
+            self.W4 = tf.Variable(tf.random_uniform([50, N_A], -1.0, 1.0), name='W4')
             self.b4 = tf.Variable(tf.zeros(shape=[N_A]), name='b4')
             self.sigma = tf.nn.softplus(tf.matmul(self.y2, self.W4) + self.b4)
 
@@ -124,10 +124,10 @@ class ACNet(object):
             self.W5 = tf.Variable(tf.random_uniform([N_S, 500], -1.0, 1.0), name='W5')
             self.b5 = tf.Variable(tf.zeros(shape=[500]), name='b5')
             self.y3 = tf.nn.relu6(tf.matmul(self.s, self.W5) + self.b5)
-            self.W6 = tf.Variable(tf.random_uniform([500, 200], -1.0, 1.0), name='W6')
-            self.b6 = tf.Variable(tf.zeros(shape=[200]), name='b6')
+            self.W6 = tf.Variable(tf.random_uniform([500, 50], -1.0, 1.0), name='W6')
+            self.b6 = tf.Variable(tf.zeros(shape=[50]), name='b6')
             self.y4 = tf.nn.relu6(tf.matmul(self.y3, self.W6) + self.b6)
-            self.W7 = tf.Variable(tf.random_uniform([200, N_A], -1.0, 1.0), name='W7')
+            self.W7 = tf.Variable(tf.random_uniform([50, N_A], -1.0, 1.0), name='W7')
             self.b7 = tf.Variable(tf.zeros(shape=[N_A]), name='b7')
             self.v = tf.matmul(self.y4, self.W7) + self.b7
         self.sd_a_params = [self.W1,self.b1,self.W2,self.b2]
@@ -575,19 +575,19 @@ def test():
 if __name__ == "__main__":
     sess = tf.Session()
     #test()
-
+    a = 1
 
     ###============================= TRAINING ===============================###
-    with tf.device("/cpu:0"):
-        OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
-        OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
-        GLOBAL_AC = ACNet(GLOBAL_NET_SCOPE)  # we only need its params4
-        #GLOBAL_AC.load_ckpt()
-        workers = []
-        # Create worker
-        for i in range(N_WORKERS):
-            i_name = 'Worker_%i' % i   # worker name
-            workers.append(Worker(i_name, GLOBAL_AC))
+    #with  tf.device("/cpu:0"):
+    OPT_A = tf.train.RMSPropOptimizer(LR_A, name='RMSPropA')
+    OPT_C = tf.train.RMSPropOptimizer(LR_C, name='RMSPropC')
+    GLOBAL_AC = ACNet(GLOBAL_NET_SCOPE)  # we only need its params4
+    #GLOBAL_AC.load_ckpt()
+    workers = []
+    # Create worker
+    for i in range(N_WORKERS):
+        i_name = 'Worker_%i' % i   # worker name
+        workers.append(Worker(i_name, GLOBAL_AC))
 
     COORD = tf.train.Coordinator()
     tl.layers.initialize_global_variables(sess)
