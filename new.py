@@ -464,16 +464,16 @@ class Worker(object):
         self.sd_v = sd_v_true
         self.no = no_true
     def grad_build(self):
-        self.sd_a_all = np.zeros((self.sd_a.shape[0],mini_steps),dtype = np.float32)
-        self.tanh_all = np.zeros((self.tanh.shape[0], mini_steps),dtype = np.float32)
-        self.sp_all = np.zeros((self.sp.shape[0], mini_steps),dtype = np.float32)
-        self.sd_v_all = np.zeros((self.sd_v.shape[0], mini_steps),dtype = np.float32)
-        self.no_all = np.zeros((self.no.shape[0], mini_steps),dtype = np.float32)
-        self.sd_a_all[:,0] = self.sd_a
-        self.tanh_all[:, 0] = self.tanh
-        self.sp_all[:, 0] = self.sp
-        self.sd_v_all[:, 0] = self.sd_v
-        self.no_all[:, 0] = self.no
+        self.sd_a_all = np.zeros((self.sd_a.shape[0],mini_steps,2),dtype = np.float32)
+        self.tanh_all = np.zeros((self.tanh.shape[0], mini_steps,2),dtype = np.float32)
+        self.sp_all = np.zeros((self.sp.shape[0], mini_steps,2),dtype = np.float32)
+        self.sd_v_all = np.zeros((self.sd_v.shape[0], mini_steps,2),dtype = np.float32)
+        self.no_all = np.zeros((self.no.shape[0], mini_steps,2),dtype = np.float32)
+        self.sd_a_all[:,0,:] = self.sd_a
+        self.tanh_all[:, 0,:] = self.tanh
+        self.sp_all[:, 0,:] = self.sp
+        self.sd_v_all[:, 0,:] = self.sd_v
+        self.no_all[:, 0,:] = self.no
     def work(self):
         global GLOBAL_RUNNING_R, GLOBAL_EP
         total_step = 1
