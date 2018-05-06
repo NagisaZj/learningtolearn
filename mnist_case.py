@@ -10,7 +10,7 @@ net_size = 20
 hidden_size = 20
 layers = 2
 #batch_size = 1
-lr = 1e-5
+lr = 1e-3
 full_batch = 128
 train_steps = 1000
 mini_steps = 20
@@ -283,10 +283,10 @@ class train:
 
 trainer = train(sess)
 #trainer.load_ckpt()
-#trainer.train_contrast()
-trainer.train_one_fun()
+trainer.train_contrast()
+#trainer.train_one_fun()
 #trainer.save_ckpt()
-trainer.save_opti()
+#trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
