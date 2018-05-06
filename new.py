@@ -470,6 +470,9 @@ class Worker(object):
             self.buffer_sp.append(self.sp)
             self.buffer_sd_v.append(self.sd_v)
             self.buffer_no.append(self.no)
+        self.sd_a_all, self.tanh_all, self.sp_all, self.sd_v_all, self.no_all = np.hstack(
+            self.buffer_sd_a), np.hstack(self.buffer_tanh), np.hstack(self.buffer_sp), np.hstack(
+            self.buffer_sd_v), np.hstack(self.buffer_no)
     def work(self):
         global GLOBAL_RUNNING_R, GLOBAL_EP
         total_step = 1
