@@ -464,16 +464,11 @@ class Worker(object):
         self.sd_v = sd_v_true
         self.no = no_true
     def grad_build(self):
-        self.sd_a_all = np.zeros((self.sd_a.shape[0],mini_steps,2),dtype = np.float32)
-        self.tanh_all = np.zeros((self.tanh.shape[0], mini_steps,2),dtype = np.float32)
-        self.sp_all = np.zeros((self.sp.shape[0], mini_steps,2),dtype = np.float32)
-        self.sd_v_all = np.zeros((self.sd_v.shape[0], mini_steps,2),dtype = np.float32)
-        self.no_all = np.zeros((self.no.shape[0], mini_steps,2),dtype = np.float32)
-        self.sd_a_all[:,0,:] = self.sd_a
-        self.tanh_all[:, 0,:] = self.tanh
-        self.sp_all[:, 0,:] = self.sp
-        self.sd_v_all[:, 0,:] = self.sd_v
-        self.no_all[:, 0,:] = self.no
+        self.sd_a_all = self.sd_a
+        self.tanh_all = self.tanh
+        self.sp_all = self.sp
+        self.sd_v_all = self.sd_v
+        self.no_all = self.no
     def work(self):
         global GLOBAL_RUNNING_R, GLOBAL_EP
         total_step = 1
@@ -522,11 +517,11 @@ class Worker(object):
                         self.grad_build()
                         grad_count = grad_count+1
                     else:
-                        self.sd_a_all[:, grad_count] = self.sd_a
-                        self.tanh_all[:, grad_count] = self.tanh
-                        self.sp_all[:, grad_count] = self.sp
-                        self.sd_v_all[:, grad_count] = self.sd_v
-                        self.no_all[:, grad_count] = self.no
+                        self.sd_a_all = np.concatenate((self.sd_a_all,self.sd_a),axis = 1)
+                        self.tanh_all = np.concatenate((self.tanh_all, self.tanh), axis=1)
+                        self.sp_all = np.concatenate((self.sp_all, self.sp), axis=1)
+                        self.sd_v_all = np.concatenate((self.sd_v_all, self.sd_v), axis=1)
+                        self.no_all = np.concatenate((self.no_all, self.no), axis=1)
                         grad_count = grad_count + 1
 
                     feed_opti = {
