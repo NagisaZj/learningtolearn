@@ -533,9 +533,9 @@ class Worker(object):
                         self.buffer_sp.pop(0)
                         self.buffer_sd_v.pop(0)
                         self.buffer_no.pop(0)
-                        self.sd_v_all,self.tanh_all,self.sp_all,self.sd_a_all,self.no_all = np.hstack(
+                        self.sd_a_all,self.tanh_all,self.sp_all,self.sd_v_all,self.no_all = np.hstack(
                             self.buffer_sd_a),np.hstack(self.buffer_tanh),np.hstack(self.buffer_sp),np.hstack(
-                            self.buffer_sd_v),np.hstack(self.bufer_no)
+                            self.buffer_sd_v),np.hstack(self.buffer_no)
 
                     feed_opti = {
                         self.AC.globalac.s: buffer_s,
