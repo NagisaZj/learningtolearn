@@ -283,10 +283,10 @@ class train:
 
 trainer = train(sess)
 #trainer.load_ckpt()
-trainer.train_contrast()
-#trainer.train_one_fun()
+#trainer.train_contrast()
+trainer.train_one_fun()
 #trainer.save_ckpt()
-#trainer.save_opti()
+trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
