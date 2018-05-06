@@ -9,7 +9,7 @@ class grader:
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
-            self.input = tf.placeholder(tf.float32,[num,1,2])
+            self.input = tf.placeholder(tf.float32,[num,20,2])
             self.rnn = tl.layers.InputLayer(self.input,name="in")
             self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = False,name="rnn1")
             self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 1,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")

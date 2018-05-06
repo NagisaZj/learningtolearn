@@ -9,7 +9,7 @@ GAME = 'BipedalWalker-v2' # BipedalWalkerHardcore-v2
 OUTPUT_GRAPH = False
 LOG_DIR = './log'
 N_WORKERS = multiprocessing.cpu_count()
-N_WORKERS = 16
+N_WORKERS = 1
 MAX_GLOBAL_EP = 50000#8000
 GLOBAL_NET_SCOPE = 'Global_Net'
 UPDATE_GLOBAL_ITER = 10
@@ -463,10 +463,22 @@ class Worker(object):
         self.sp = sp_true
         self.sd_v = sd_v_true
         self.no = no_true
+    def grad_build(self):
+        self.sd_a_all = tf.zeros([self.sd_a.shape[0],mini_steps])
+        self.tanh_all = tf.zeros([self.tanh.shape[0], mini_steps])
+        self.sp_all = tf.zeros([self.sp.shape[0], mini_steps])
+        self.sd_v_all = tf.zeros([self.sd_v.shape[0], mini_steps])
+        self.no_all = tf.zeros([self.no.shape[0], mini_steps])
+        self.sd_a_all[:,0] = self.sd_a
+        self.tanh_all[:, 0] = self.tanh
+        self.sp_all[:, 0] = self.sp
+        self.sd_v_all[:, 0] = self.sd_v
+        self.no_all[:, 0] = self.no
     def work(self):
         global GLOBAL_RUNNING_R, GLOBAL_EP
         total_step = 1
         buffer_s, buffer_a, buffer_r = [], [], []
+        grad_count = 0
         while not COORD.should_stop() and GLOBAL_EP < MAX_GLOBAL_EP:
             s = self.env.reset()
             ep_r = 0
@@ -506,24 +518,47 @@ class Worker(object):
                                                      self.AC.sp_grads,self.AC.sd_v_grads,self.AC.no_grads],
                                                     feed_dict = feed_dict)
                     self.preprocess()
-                    ## update gradients on global network
+                    if grad_count ==0:
+                        self.grad_build()
+                        grad_count = grad_count+1
+                    else:
+                        self.sd_a_all[:, grad_count] = self.sd_a
+                        self.tanh_all[:, grad_count] = self.tanh
+                        self.sp_all[:, grad_count] = self.sp
+                        self.sd_v_all[:, grad_count] = self.sd_v
+                        self.no_all[:, grad_count] = self.no
+                        grad_count = grad_count + 1
+
                     feed_opti = {
                         self.AC.globalac.s: buffer_s,
                         self.AC.globalac.a_his: buffer_a,
                         self.AC.globalac.v_target: buffer_v_target,
-                        self.AC.globalac.sigmoid_a_optimizer.input:self.sd_a,
+                        self.AC.globalac.sigmoid_a_optimizer.input: self.sd_a,
                         self.AC.globalac.tanh_optimizer.input: self.tanh,
                         self.AC.globalac.sp_optimizer.input: self.sp,
                         self.AC.globalac.sigmoid_v_optimizer.input: self.sd_v,
                         self.AC.globalac.no_optimizer.input: self.no,
                     }
-                    for j in range(mini_steps):
+                    ## update gradients on global network
+                    if grad_count ==20:
+                        feed_opti_all = {
+                        self.AC.globalac.s: buffer_s,
+                        self.AC.globalac.a_his: buffer_a,
+                        self.AC.globalac.v_target: buffer_v_target,
+                        self.AC.globalac.sigmoid_a_optimizer.input:self.sd_a_all,
+                        self.AC.globalac.tanh_optimizer.input: self.tanh_all,
+                        self.AC.globalac.sp_optimizer.input: self.sp_all,
+                        self.AC.globalac.sigmoid_v_optimizer.input: self.sd_v_all,
+                        self.AC.globalac.no_optimizer.input: self.no_all,
+                    }
+                    #for j in range(mini_steps):
                         sess.run([self.AC.globalac.sigmoid_a_optimizer.train_op,
                                   self.AC.globalac.tanh_optimizer.train_op,
                                   self.AC.globalac.sp_optimizer.train_op,
                                   self.AC.globalac.sigmoid_v_optimizer.train_op,
                                   self.AC.globalac.no_optimizer.train_op],
-                                      feed_dict=feed_opti)
+                                      feed_dict=feed_opti_all)
+                        grad_count = 0
                     sess.run([self.AC.globalac.assign_op], feed_dict=feed_opti)
                     buffer_s, buffer_a, buffer_r = [], [], []
 
