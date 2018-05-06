@@ -464,16 +464,22 @@ class Worker(object):
         self.sd_v = sd_v_true
         self.no = no_true
     def grad_build(self):
-        self.sd_a_all = self.sd_a
-        self.tanh_all = self.tanh
-        self.sp_all = self.sp
-        self.sd_v_all = self.sd_v
-        self.no_all = self.no
+        for i in range(mini_steps):
+            self.buffer_sd_a.append(self.sd_a)
+            self.buffer_tanh.append(self.tanh)
+            self.buffer_sp.append(self.sp)
+            self.buffer_sd_v.append(self.sd_v)
+            self.buffer_no.append(self.no)
     def work(self):
         global GLOBAL_RUNNING_R, GLOBAL_EP
         total_step = 1
         buffer_s, buffer_a, buffer_r = [], [], []
-        grad_count = 0
+        self.buffer_sd_a = []
+        self.buffer_tanh = []
+        self.buffer_sp = []
+        self.buffer_sd_v =[]
+        self.buffer_no = []
+        grad_count=0
         while not COORD.should_stop() and GLOBAL_EP < MAX_GLOBAL_EP:
             s = self.env.reset()
             ep_r = 0
@@ -517,43 +523,41 @@ class Worker(object):
                         self.grad_build()
                         grad_count = grad_count+1
                     else:
-                        self.sd_a_all = np.concatenate((self.sd_a_all,self.sd_a),axis = 1)
-                        self.tanh_all = np.concatenate((self.tanh_all, self.tanh), axis=1)
-                        self.sp_all = np.concatenate((self.sp_all, self.sp), axis=1)
-                        self.sd_v_all = np.concatenate((self.sd_v_all, self.sd_v), axis=1)
-                        self.no_all = np.concatenate((self.no_all, self.no), axis=1)
-                        grad_count = grad_count + 1
+                        self.buffer_sd_a.append(self.sd_a)
+                        self.buffer_tanh.append(self.tanh)
+                        self.buffer_sp.append(self.sp)
+                        self.buffer_sd_v.append(self.sd_v)
+                        self.buffer_no.append(self.no)
+                        self.buffer_sd_a.pop(0)
+                        self.buffer_tanh.pop(0)
+                        self.buffer_sp.pop(0)
+                        self.buffer_sd_v.pop(0)
+                        self.buffer_no.pop(0)
+                        self.sd_v_all,self.tanh_all,self.sp_all,self.sd_a_all,self.no_all = np.hstack(
+                            self.buffer_sd_a),np.hstack(self.buffer_tanh),np.hstack(self.buffer_sp),np.hstack(
+                            self.buffer_sd_v),np.hstack(self.bufer_no)
 
                     feed_opti = {
                         self.AC.globalac.s: buffer_s,
                         self.AC.globalac.a_his: buffer_a,
                         self.AC.globalac.v_target: buffer_v_target,
-                        self.AC.globalac.sigmoid_a_optimizer.input: self.sd_a,
-                        self.AC.globalac.tanh_optimizer.input: self.tanh,
-                        self.AC.globalac.sp_optimizer.input: self.sp,
-                        self.AC.globalac.sigmoid_v_optimizer.input: self.sd_v,
-                        self.AC.globalac.no_optimizer.input: self.no,
-                    }
-                    ## update gradients on global network
-                    if grad_count ==20:
-                        feed_opti_all = {
-                        self.AC.globalac.s: buffer_s,
-                        self.AC.globalac.a_his: buffer_a,
-                        self.AC.globalac.v_target: buffer_v_target,
-                        self.AC.globalac.sigmoid_a_optimizer.input:self.sd_a_all,
+                        self.AC.globalac.sigmoid_a_optimizer.input: self.sd_a_all,
                         self.AC.globalac.tanh_optimizer.input: self.tanh_all,
                         self.AC.globalac.sp_optimizer.input: self.sp_all,
                         self.AC.globalac.sigmoid_v_optimizer.input: self.sd_v_all,
                         self.AC.globalac.no_optimizer.input: self.no_all,
                     }
+                    ## update gradients on global network
+
+
                     #for j in range(mini_steps):
-                        sess.run([self.AC.globalac.sigmoid_a_optimizer.train_op,
+                    sess.run([self.AC.globalac.sigmoid_a_optimizer.train_op,
                                   self.AC.globalac.tanh_optimizer.train_op,
                                   self.AC.globalac.sp_optimizer.train_op,
                                   self.AC.globalac.sigmoid_v_optimizer.train_op,
                                   self.AC.globalac.no_optimizer.train_op],
-                                      feed_dict=feed_opti_all)
-                        grad_count = 0
+                                      feed_dict=feed_opti)
+
                     sess.run([self.AC.globalac.assign_op], feed_dict=feed_opti)
                     buffer_s, buffer_a, buffer_r = [], [], []
 
