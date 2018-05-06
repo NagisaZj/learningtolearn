@@ -464,11 +464,11 @@ class Worker(object):
         self.sd_v = sd_v_true
         self.no = no_true
     def grad_build(self):
-        self.sd_a_all = tf.zeros([self.sd_a.shape[0],mini_steps])
-        self.tanh_all = tf.zeros([self.tanh.shape[0], mini_steps])
-        self.sp_all = tf.zeros([self.sp.shape[0], mini_steps])
-        self.sd_v_all = tf.zeros([self.sd_v.shape[0], mini_steps])
-        self.no_all = tf.zeros([self.no.shape[0], mini_steps])
+        self.sd_a_all = tf.zeros((self.sd_a.shape[0],mini_steps),dtype = np.float32)
+        self.tanh_all = tf.zeros((self.tanh.shape[0], mini_steps),dtype = np.float32)
+        self.sp_all = tf.zeros((self.sp.shape[0], mini_steps),dtype = np.float32)
+        self.sd_v_all = tf.zeros((self.sd_v.shape[0], mini_steps),dtype = np.float32)
+        self.no_all = tf.zeros((self.no.shape[0], mini_steps),dtype = np.float32)
         self.sd_a_all[:,0] = self.sd_a
         self.tanh_all[:, 0] = self.tanh
         self.sp_all[:, 0] = self.sp
