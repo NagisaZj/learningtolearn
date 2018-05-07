@@ -9,10 +9,10 @@ class grader:
         with tf.variable_scope(type,reuse=tf.AUTO_REUSE) as scope:
             self.scope = type
             self.cell_list = []
-            self.input = tf.placeholder(tf.float32,[num,None,2])
+            self.input = tf.placeholder(tf.float32,[num,20,2])
             self.rnn = tl.layers.InputLayer(self.input,name="in")
-            self.rnn = tl.layers.DynamicRNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = False,name="rnn1")
-            self.rnn = tl.layers.DynamicRNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 20,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = False,name="rnn1")
+            self.rnn = tl.layers.RNNLayer(self.rnn,cell_fn = tf.nn.rnn_cell.BasicLSTMCell,n_hidden = hidden_size,n_steps = 20,initializer=tf.random_uniform_initializer(-1, 1),return_last = False,return_seq_2d = True,name = "rnn2")
             self.rnn = tl.layers.DenseLayer(self.rnn,n_units=1,W_init=tf.truncated_normal_initializer(stddev=0.1),name = "dense_opti")
             self.output = self.rnn.outputs
             self.output = self.output * 0.1
