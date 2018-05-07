@@ -228,13 +228,10 @@ class train:
             sigmoid_grads,softmax_grads = self.sess.run([self.sigmoid_gradients,self.softmax_gradients],feed_dict = feed_dict)
             #print(softmax_grads[0].shape)
             sigmoid_grads,softmax_grads = self.preprocess(sigmoid_grads,softmax_grads)
-            if cnt ==0:
-                for i in range(mini_steps-1):
-                    self.sd_buffer.append(np.zeros_like(sigmoid_grads))
-                    self.sx_buffer.append(np.zeros_like(softmax_grads))
-                self.sd_buffer.append(sigmoid_grads)
-                self.sx_buffer.append(softmax_grads)
-                cnt = 1
+            if cnt <=20:
+                self.sd_buffer.append(np.zeros_like(sigmoid_grads))
+                self.sx_buffer.append(np.zeros_like(softmax_grads))
+                cnt = cnt+1
             else:
                 self.sd_buffer.append(sigmoid_grads)
                 self.sx_buffer.append(softmax_grads)
