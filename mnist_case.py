@@ -10,9 +10,9 @@ net_size = 20
 hidden_size = 20
 layers = 2
 #batch_size = 1
-lr = 1e-3
+lr = 5e-4
 full_batch = 128
-train_steps = 1000
+train_steps = 100000
 mini_steps = 20
 p = 10
 sess = tf.Session()
@@ -246,7 +246,7 @@ class train:
                         self.softmax_optimizer.input:self.sx_all,self.label:y}
             #self.sess.run(self.assign_op,feed_dict = feed_dict)
 
-            self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
+            #self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
             self.sess.run([self.assign_op],feed_dict = feed_opti)
             if i %10 ==0:
                 loss,loss_new = self.sess.run([self.loss,self.loss_new],feed_dict = feed_opti)
