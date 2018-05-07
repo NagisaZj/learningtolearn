@@ -10,9 +10,9 @@ net_size = 20
 hidden_size = 20
 layers = 2
 #batch_size = 1
-lr = 5e-4
+lr = 1e-3
 full_batch = 128
-train_steps = 100000
+train_steps = 1000
 mini_steps = 20
 p = 10
 sess = tf.Session()
@@ -229,11 +229,11 @@ class train:
             #print(softmax_grads[0].shape)
             sigmoid_grads,softmax_grads = self.preprocess(sigmoid_grads,softmax_grads)
             if cnt ==0:
-                for i in range(19):
+                for i in range(1):
                     self.sd_buffer.append(np.zeros_like(sigmoid_grads))
                     self.sx_buffer.append(np.zeros_like(softmax_grads))
-                    self.sd_buffer.append(sigmoid_grads)
-                    self.sx_buffer.append(softmax_grads)
+                self.sd_buffer.append(sigmoid_grads)
+                self.sx_buffer.append(softmax_grads)
                 cnt = cnt+1
             else:
                 self.sd_buffer.append(sigmoid_grads)
@@ -241,12 +241,13 @@ class train:
                 self.sd_buffer.pop(0)
                 self.sx_buffer.pop(0)
             self.sd_all,self.sx_all = np.hstack(self.sd_buffer),np.hstack(self.sx_buffer)
+            #self.sd_all,self.sx_all = sigmoid_grads,softmax_grads
             #print(softmax_grads.shape)
             feed_opti ={self.input: W,self.sigmoid_optimizer.input:self.sd_all,
                         self.softmax_optimizer.input:self.sx_all,self.label:y}
             #self.sess.run(self.assign_op,feed_dict = feed_dict)
 
-            #self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
+            self.sess.run([self.sigmoid_optimizer.train_op,self.softmax_optimizer.train_op],feed_dict = feed_opti)
             self.sess.run([self.assign_op],feed_dict = feed_opti)
             if i %10 ==0:
                 loss,loss_new = self.sess.run([self.loss,self.loss_new],feed_dict = feed_opti)
