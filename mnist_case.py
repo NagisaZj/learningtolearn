@@ -229,7 +229,7 @@ class train:
             #print(softmax_grads[0].shape)
             sigmoid_grads,softmax_grads = self.preprocess(sigmoid_grads,softmax_grads)
             if cnt ==0:
-                for i in range(1):
+                for i in range(4):
                     self.sd_buffer.append(np.zeros_like(sigmoid_grads))
                     self.sx_buffer.append(np.zeros_like(softmax_grads))
                 self.sd_buffer.append(sigmoid_grads)
@@ -286,10 +286,10 @@ class train:
 
 trainer = train(sess)
 #trainer.load_ckpt()
-#trainer.train_contrast()
-trainer.train_one_fun()
+trainer.train_contrast()
+#trainer.train_one_fun()
 #trainer.save_ckpt()
-trainer.save_opti()
+#trainer.save_opti()
 #optimizer_0 = grader(hidden_size,layers,batch_size,0,lr)
 #optimizer_0.feed(tf.reshape(params[0][0][0],[1,1,1]))
 
